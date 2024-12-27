@@ -11,6 +11,10 @@ html {
 	font-family: 'Helvetica Neue', Arial, Sans-Serif;
 }
 
+body {
+	position: relative;
+}
+
 /* login page */
 
 .login-label {
@@ -180,4 +184,102 @@ html {
 
 .dropdown:hover .dropdown-content {
 	display: block;
+}
+
+/* checkout area */
+.checkout-container {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	height: 100vh;
+	padding: 20px;
+}
+
+.checkout-section {
+	flex: 1;
+	padding: 20px;
+	background-color: #f9f9f9;
+	border-right: 2px solid #ddd;
+}
+
+.user-id-label {
+	font-size: 1em;
+	color: #34495e;
+	font-weight: bold;
+}
+
+#user-id {
+	height: 30px;
+	margin-top: 20px;
+	margin-right: 30px;
+	padding: 5px;
+	border: 1px solid #bbb;
+	border-radius: 5px;
+	font-size: 14px;
+}
+
+button {
+	background: #3c6ae7;
+	border: none;
+	color: white;
+	height: 36px;
+	font-size: 14px;
+	font-weight: 500;
+	padding: 0 15px;
+	cursor: pointer;
+	border-radius: 5px;
+	transition: background-color 0.3s;
+
+	&:hover {
+		background-color: #345cca;
+	}
+
+	&:active {
+		background-color: #2a4ba7;
+	}
+}
+
+#tool-id-section {
+	margin-top: 20px;
+}
+
+.tool-id-label {
+	font-size: 1em;
+	color: #34495e;
+	font-weight: bold;
+}
+
+#tool-id {
+	height: 30px;
+	padding: 5px;
+	border: 1px solid #bbb;
+	border-radius: 5px;
+	font-size: 14px;
+	margin-top: 20px;
+	margin-right: 30px;
+}
+
+.user-info-section {
+	flex: 1;
+	padding: 20px;
+	background-color: #fff;
+	overflow-y: auto;
+	border-left: 2px solid #ddd;
+}
+
+.user-info-section h2,
+.user-info-section h3 {
+	color: #34495e;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+#user-info {
+	margin-bottom: 20px;
+}
+
+#checked-out-tools {
+	list-style-type: none;
+	padding: 0;
+	color: #34495e;
 }

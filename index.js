@@ -4,6 +4,7 @@ require('dotenv').config()
 const bodyParser = require('body-parser')
 const { Pool } = require('pg')
 const axios = require('axios')
+let checkoutToken = null
 
 const app = express()
 const PORT = 3000
@@ -92,6 +93,32 @@ app.post('/auth/login', async (req, res) => {
 				res.status(500).send('Internal server error')
 			}
 		} else {
+			res.status(500).send('Internal server error')
+		}
+	}
+})
+
+app.get('/checkout/user', async (req, res) => {
+	const { user_display_id } = req.query
+
+	try {
+		const response = await axios.get('http://localhost:8080/checkout/user', {
+			params: { user_display_id },
+		})
+		checkoutToken = response.data.checkoutToken
+		res.json(response.data)
+	} catch (error) {
+		if (error.response) {
+			if (error.response.status === 404) {
+				res.status(404).send('User not found')
+			} else if (error.response.status === 400) {
+				res.status(400).send('Invalid or missing parameters')
+			} else {
+				console.error(error)
+				res.status(500).send('Internal server error')
+			}
+		} else {
+			console.error(error)
 			res.status(500).send('Internal server error')
 		}
 	}
