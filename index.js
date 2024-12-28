@@ -79,7 +79,7 @@ app.post('/auth/login', async (req, res) => {
 		})
 
 		if (response.status === 200) {
-			res.redirect('/main')
+			res.redirect('/checkout')
 		}
 	} catch (error) {
 		console.error('Error code: ', error.response.status)
@@ -124,9 +124,39 @@ app.get('/checkout/user', async (req, res) => {
 	}
 })
 
-// serve main page
+// serve checkout page
 app.get('/checkout', (req, res) => {
 	res.sendFile(__dirname + '/public/checkout.html')
+})
+
+// serve checkin page
+app.get('/checkin', (req, res) => {
+	res.sendFile(__dirname + '/public/checkin.html')
+})
+
+// serve search page
+app.get('/search', (req, res) => {
+	res.sendFile(__dirname + '/public/search.html')
+})
+
+// serve help page
+app.get('/help', (req, res) => {
+	res.sendFile(__dirname + '/public/help.html')
+})
+
+// serve user mgmt page
+app.get('/user_mgmt', (req, res) => {
+	res.sendFile(__dirname + '/public/admin/user_mgmt.html')
+})
+
+// serve tool mgmt page
+app.get('/tool_mgmt', (req, res) => {
+	res.sendFile(__dirname + '/public/admin/tool_mgmt.html')
+})
+
+// serve misc mgmt page
+app.get('/misc_mgmt', (req, res) => {
+	res.sendFile(__dirname + '/public/admin/misc_mgmt.html')
 })
 
 // start server

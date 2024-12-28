@@ -1,5 +1,23 @@
 let checkoutToken = null
 
+// checkout/checkin dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPage = window.location.pathname
+    const dropdownButton = document.getElementById('checkout-dropdown')
+    const dropdownContent = document.getElementById('checkout-dropdown-content')
+    const checkoutLink = document.getElementById('checkout-link')
+
+    if (currentPage.includes('/checkout')) {
+        dropdownButton.innerHtml = `Checkout\n<img src="/images/caret_down.png" alt="Dropdown">`
+        checkoutLink.innerText = 'Checkin'
+        checkoutLink.href = '/checkin'
+    } else if (currentPage.includes('/checkin')) {
+        dropdownButton.innerHtml = `Checkin\n<img src="/images/caret_down.png" alt="Dropdown">`
+        checkoutLink.innerText = 'Checkout'
+        checkoutLink.href = '/checkout'
+    }
+})
+
 async function fetchUserInfo(userId) {
     // fetch user data
     try {
@@ -20,8 +38,6 @@ async function fetchUserInfo(userId) {
         alert(data.message || 'Error fetching user info')
     }
 }
-
-
 
 // user id submission
 document.getElementById('user-id-form').addEventListener('submit', async function (e) {
