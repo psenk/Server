@@ -5,12 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutLink = document.getElementById('checkout-link')
 
     if (currentPage.includes('/checkout')) {
-        dropdownButton.innerHtml = `Checkout\n<img src="/images/caret_down.png" alt="Dropdown">`
-        checkoutLink.innerText = 'Checkin'
-        checkoutLink.href = '/checkin'
+        dropdownButton.innerHTML = `Checkout <img src="/images/caret_down.png" alt="Dropdown">`; // Corrected innerHTML
+        dropdownContent.innerHTML = `<a href="/checkin">Checkin</a>`; // Correctly update dropdown content
+        dropdownButton.setAttribute('href', '/checkout'); // Update href correctly
     } else if (currentPage.includes('/checkin')) {
-        dropdownButton.innerHtml = `Checkin\n<img src="/images/caret_down.png" alt="Dropdown">`
-        checkoutLink.innerText = 'Checkout'
-        checkoutLink.href = '/checkout'
+        dropdownButton.innerHTML = `Checkin <img src="/images/caret_down.png" alt="Dropdown">`; // Corrected innerHTML
+        dropdownContent.innerHTML = `<a href="/checkout">Checkout</a>`; // Correctly update dropdown content
+        dropdownButton.setAttribute('href', '/checkin'); // Update href correctly
     }
 })

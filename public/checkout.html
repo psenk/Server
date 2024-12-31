@@ -14,9 +14,9 @@
     <!-- navigation bar -->
     <div class="navbar">
         <div class="dropdown">
-            <button class="dropbtn" id="checkout-dropdown">Checkout
+            <a href="/checkout" class="dropbtn" id="checkout-dropdown">Checkout
                 <img src="/images/caret_down.png" alt="Dropdown">
-            </button>
+            </a>
             <div id="checkout-dropdown-content" class="dropdown-content">
                 <a href="/checkin">Checkin</a>
             </div>
@@ -36,12 +36,13 @@
         <a href="/help">Help</a>
     </div>
 
-    <div class="checkout-container">
+    <!-- main section -->
+    <div class="main-container">
         <!-- checkout section left -->
-        <div class="checkout-section">
+        <div class="left-section">
             <!-- display id submit-->
             <form id="user-id-form" action="/checkout/user" method="get">
-                <label for="user-id" class="user-id-label">Enter User ID to begin checkout:</label>
+                <label for="user-id" class="id-label">Enter User ID to begin checkout:</label>
                 <br />
                 <input type="text" id="user-id" name="user_display_id" placeholder="User ID" required />
                 <button type="submit" id="user-submit-btn">Submit</button>
@@ -49,7 +50,7 @@
             <!-- tool id submit (default hidden)-->
             <div id="tool-id-section" style="display: none;">
                 <form id="tool-id-form">
-                    <label for="tool-id" class="tool-id-label">Enter Tool Id:</label>
+                    <label for="tool-id" class="id-label">Enter Tool Id:</label>
                     <br />
                     <input type="text" id="tool-id" name="tool_id" placeholder="Tool ID" required />
                     <button type="submit" id="tool-submit-btn">Submit</button>
@@ -58,7 +59,7 @@
         </div>
 
         <!-- details section right -->
-        <div class="user-info-section" id="user-info-section">
+        <div class="info-section" id="info-section">
             <h2>User Information</h2>
             <div id="user-info"></div>
             <h3 id="checked-out-tools-label" style="display: none;">Checked out Tools</h3>

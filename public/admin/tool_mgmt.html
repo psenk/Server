@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tool Management System Tool Management</title>
     <link href="../css/style.css" rel="stylesheet" />
+    <script type="text/javascript" src="../js/tool.js" defer></script>
 </head>
+
 <body>
 
     <!-- navigation bar -->
     <div class="navbar">
         <div class="dropdown">
-            <button class="dropbtn" id="checkout-dropdown">Checkout
+            <a href="/checkout" class="dropbtn" id="checkout-dropdown">Checkout
                 <img src="/images/caret_down.png" alt="Dropdown">
-            </button>
+            </a>
             <div id="checkout-dropdown-content" class="dropdown-content">
                 <a href="/checkin">Checkin</a>
             </div>
@@ -32,6 +35,54 @@
         </div>
         <a href="/help">Help</a>
     </div>
-    
+
+    <!-- main section -->
+    <div class="main-container">
+        <!-- tool section left -->
+        <div class="left-section">
+            <!-- tool id submit-->
+            <form id="tool-id-form" action="/tools/tool" method="get">
+                <label for="tool-id" class="id-label">Enter Tool Code:</label>
+                <br />
+                <input type="text" id="tool-id" name="tool_id" placeholder="Tool Code" required />
+                <button type="submit" id="tool-submit-btn">Submit</button>
+            </form>
+            <br /><br />
+            <!-- Create New Tool Button -->
+            <button id="create-new-tool-btn">Create New Tool</button>
+        </div>
+
+        <!-- details section right -->
+        <div class="info-section" id="info-section">
+            <h2>Tool Information</h2>
+            <div id="user-info"></div>
+            <ul id="checked-out-tools"></ul>
+
+            <!-- New Tool Form (Initially Hidden) -->
+            <div id="new-item-form" style="display: none;">
+                <h2>Create New Tool</h2>
+                <form id="create-tool-form" action="/tools/new" method="post">
+                    <label for="tool_name">Tool Name:</label>
+                    <input type="text" id="tool_name" name="tool_name" required />
+                    <br />
+                    <label for="tool_image">Tool Image URL:</label>
+                    <input type="text" id="tool_image" name="tool_image" />
+                    <br />
+                    <label for="tool_code">Tool Code:</label>
+                    <input type="text" id="tool_code" name="tool_code" required />
+                    <br />
+                    <label for="manufacturer_id">Tool Manufacturer:</label>
+                    <input type="number" id="manufacturer_id" name="manufacturer_id" required />
+                    <br />
+                    <label for="location_id">Tool Location:</label>
+                    <input type="number" id="location_id" name="location_id" required />
+                    <br />
+                    <button type="submit">Save Tool</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
+
 </html>
