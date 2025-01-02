@@ -40,16 +40,21 @@
     <div class="main-container">
         <!-- user section left -->
         <div class="left-section">
-            <!-- user id submit-->
-            <form id="user-id-form" action="/users/user" method="get">
-                <label for="user-id" class="id-label">Enter User Display ID:</label>
-                <br />
-                <input type="text" id="user-id" name="user_display_id" placeholder="User ID" required />
-                <button type="submit" id="user-submit-btn">Submit</button>
-            </form>
-            <br /><br />
-            <!-- Create New User Button -->
-            <button id="create-new-user-btn">Create New User</button>
+            <fieldset>
+                <legend>User Management</legend>
+                <!-- User ID Submit -->
+                <form id="user-id-form" action="/users/user" method="get">
+                    <label for="user-id" class="id-label">Enter User Display ID:</label>
+                    <div class="form-row">
+                        <input type="text" id="user-id" name="user_display_id" placeholder="User ID" required />
+                        <button type="submit" id="user-submit-btn">Submit</button>
+                    </div>
+                </form>
+                <!-- Create New User Button -->
+                <div class="button-row">
+                    <button id="create-new-user-btn">Create New User</button>
+                </div>
+            </fieldset>
         </div>
 
         <!-- details section right -->

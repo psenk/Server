@@ -38,18 +38,23 @@
 
     <!-- main section -->
     <div class="main-container">
-        <!-- tool section left -->
+        <!-- Tool Section Left -->
         <div class="left-section">
-            <!-- tool id submit-->
-            <form id="tool-id-form" action="/tools/tool" method="get">
-                <label for="tool-id" class="id-label">Enter Tool Code:</label>
-                <br />
-                <input type="text" id="tool-id" name="tool_id" placeholder="Tool Code" required />
-                <button type="submit" id="tool-submit-btn">Submit</button>
-            </form>
-            <br /><br />
-            <!-- Create New Tool Button -->
-            <button id="create-new-tool-btn">Create New Tool</button>
+            <fieldset>
+                <legend>Tool Management</legend>
+                <!-- Tool ID Submit -->
+                <form id="tool-id-form" action="/tools/tool" method="get">
+                    <label for="tool-id" class="id-label">Enter Tool Code:</label>
+                    <div class="form-row">
+                        <input type="text" id="tool-id" name="tool_id" placeholder="Tool Code" required />
+                        <button type="submit" id="tool-submit-btn">Submit</button>
+                    </div>
+                </form>
+                <!-- Create New Tool Button -->
+                <div class="button-row">
+                    <button id="create-new-tool-btn">Create New Tool</button>
+                </div>
+            </fieldset>
         </div>
 
         <!-- details section right -->
