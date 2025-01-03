@@ -1,6 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
 	const detailsContent = document.getElementById('details-content')
 
+	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
+		try {
+			const response = await fetch(endpoint)
+			let data = await response.json()
+			data = data.tools
+
+			const dropdown = document.getElementById(dropdownId)
+			dropdown.innerHTML = ''
+
+			if (!preselectedValue) {
+				const placeholderOption = document.createElement('option')
+				placeholderOption.value = ''
+				placeholderOption.textContent = `Select a ${dropdownId.includes('tool') ? 'tool' : 'item'}`
+				placeholderOption.disabled = true
+				placeholderOption.selected = true
+				dropdown.appendChild(placeholderOption)
+			}
+
+			data.forEach((item) => {
+				const option = document.createElement('option')
+				option.value = item[valueKey]
+				option.textContent = item[textKey]
+				if (String(item[valueKey]) === String(preselectedValue)) {
+					option.selected = true
+				}
+				dropdown.appendChild(option)
+			})
+		} catch (error) {
+			console.error(`Error fetching data for ${dropdownId}:`, error)
+		}
+	}
+
 	// locations
 	// create location
 	document.getElementById('create-location-btn').addEventListener('click', () => {
@@ -183,15 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// inspections
 	// create inspection
-	document.getElementById('create-inspection-btn').addEventListener('click', () => {
+	document.getElementById('create-inspection-btn').addEventListener('click', async () => {
 		detailsContent.style.display = 'block'
 		detailsContent.innerHTML = `
 			<h3>Create Inspection</h3>
 			<form id="create-inspection-form">
 				<label for="inspection_name">Inspection Name:</label>
 				<input type="text" id="inspection_name" name="inspectionName" required />
-				<label for="tool_id">Tool ID:</label>
-				<input type="number" id="tool_id" name="toolId" required />
+				<label for="tool_id">Tool:</label>
+            	<select id="tool_id" name="toolId" required></select>
 				<label for="inspection_frequency">Frequency:</label>
 				<input type="number" id="inspection_frequency" name="inspectionFrequency" />
 				<label for="inspection_due_date">Due Date:</label>
@@ -201,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				<button type="submit">Create Inspection</button>
 			</form>
 		`
+
+		await populateDropdown('/tools/all', 'tool_id', 'toolId', 'toolName')
 
 		document.getElementById('create-inspection-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
@@ -291,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// parts
 	// create part
-	document.getElementById('create-part-btn').addEventListener('click', () => {
+	document.getElementById('create-part-btn').addEventListener('click', async () => {
 		detailsContent.style.display = 'block'
 		detailsContent.innerHTML = `
 			<h3>Create Part</h3>
@@ -299,12 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				<label for="part_name">Part Name:</label>
 				<input type="text" id="part_name" name="partName" required />
 				<label for="tool_id">Tool ID:</label>
-				<input type="number" id="tool_id" name="toolId" required />
+				            <select id="tool_id" name="toolId" required></select>
 				<label for="part_quantity">Part Quantity:</label>
 				<input type="number" id="part_quantity" name="partQuantity" />
 				<button type="submit">Create Part</button>
 			</form>
 		`
+
+		await populateDropdown('/tools/all', 'tool_id', 'toolId', 'toolName')
 
 		document.getElementById('create-part-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
@@ -549,7 +585,7 @@ async function loadInspections() {
 		detailsContent.innerHTML = listHtml
 
 		document.querySelectorAll('.inspection-item').forEach((item) => {
-			item.addEventListener('click', () => {
+			item.addEventListener('click', async () => {
 				const inspectionId = item.getAttribute('data-id')
 				const inspectionName = item.textContent
 				const toolId = item.getAttribute('data-tool-id')
@@ -574,6 +610,9 @@ async function loadInspections() {
                         <button type="submit">Save Inspection</button>
                     </form>
                 `
+
+				const preselectedToolId = inspection.toolId
+				await populateDropdown('/tools/all', 'edit_tool_id', 'toolId', 'toolName', preselectedToolId)
 
 				document.getElementById('edit-inspection-form').addEventListener('submit', async (e) => {
 					e.preventDefault()
@@ -637,7 +676,7 @@ async function loadParts() {
 		detailsContent.innerHTML = listHtml
 
 		document.querySelectorAll('.part-item').forEach((item) => {
-			item.addEventListener('click', () => {
+			item.addEventListener('click', async () => {
 				const partId = item.getAttribute('data-id')
 				const partName = item.textContent
 				const toolId = item.getAttribute('data-tool-id')
@@ -656,6 +695,9 @@ async function loadParts() {
                         <button type="submit">Save Part</button>
                     </form>
                 `
+
+				const preselectedToolId = part.toolId
+				await populateDropdown('/tools/all', 'edit_tool_id', 'toolId', 'toolName', preselectedToolId)
 
 				document.getElementById('edit-part-form').addEventListener('submit', async (e) => {
 					e.preventDefault()

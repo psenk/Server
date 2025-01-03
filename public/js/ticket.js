@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('ticket-form');
-    console.log(form)
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Description:
             ${description}
         `;
-        console.log(ticketDetails)
+
         try {
             await fetch('/send-email', {
                 method: 'POST',

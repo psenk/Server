@@ -280,7 +280,7 @@ app.post('/users/new', async (req, res) => {
 // edit user
 app.put('/users/edit/:userId', async (req, res) => {
 	const { userId } = req.params
-	const { userDisplayId, userName, userContactNumber, userEmail, userSupervisorId = null, userLocationId = null, userAdmin = false, userAuth = null } = req.body
+	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, locationId = null, userAdmin = false, userAuth = null } = req.body
 
 	try {
 		// send to spring
@@ -289,8 +289,8 @@ app.put('/users/edit/:userId', async (req, res) => {
 			userName,
 			userContactNumber,
 			userEmail,
-			userSupervisorId,
-			userLocationId,
+			supervisorId,
+			locationId,
 			userAdmin,
 			userAuth,
 		})

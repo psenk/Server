@@ -1,8 +1,46 @@
 document.addEventListener('DOMContentLoaded', () => {
 	const detailsContent = document.getElementById('details-content')
 
+	// populate dropdowns
+	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
+		try {
+			const response = await fetch(endpoint)
+			let data = await response.json()
+
+			if (data.locations) {
+				data = data.locations
+			} else if (data.manufacturers) {
+				data = data.manufacturers
+			}
+
+			const dropdown = document.getElementById(dropdownId)
+			dropdown.innerHTML = ''
+
+			if (!preselectedValue) {
+				const placeholderOption = document.createElement('option')
+				placeholderOption.value = ''
+				placeholderOption.textContent = `Select a ${dropdownId.includes('manufacturer') ? 'manufacturer' : 'location'}`
+				placeholderOption.disabled = true
+				placeholderOption.selected = true
+				dropdown.appendChild(placeholderOption)
+			}
+
+			data.forEach((item) => {
+				const option = document.createElement('option')
+				option.value = item[valueKey]
+				option.textContent = item[textKey]
+				if (item[valueKey] === preselectedValue) {
+					option.selected = true
+				}
+				dropdown.appendChild(option)
+			})
+		} catch (error) {
+			console.error(`Error fetching data for ${dropdownId}:`, error)
+		}
+	}
+
 	// Create tool
-	document.getElementById('create-tool-btn').addEventListener('click', () => {
+	document.getElementById('create-tool-btn').addEventListener('click', async () => {
 		detailsContent.style.display = 'block'
 		detailsContent.innerHTML = `
             <h3>Create Tool</h3>
@@ -13,16 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="text" id="tool_name" name="toolName" required />
                 <label for="tool_image_url">Tool Image URL:</label>
                 <input type="text" id="tool_image_url" name="toolImageUrl" />
-                <label for="manufacturer_id">Manufacturer ID:</label>
-                <input type="number" id="manufacturer_id" name="manufacturerId" />
-                <label for="location_id">Location ID:</label>
-                <input type="number" id="location_id" name="locationId" />
+				<label for="manufacturer_id">Manufacturer:</label>
+				<select id="manufacturer_id" name="manufacturerId" ></select>
+				<label for="location_id">Location:</label>
+				<select id="location_id" name="locationId"></select>
                 <button type="submit">Create Tool</button>
             </form>
         `
 
+		await populateDropdown('/misc/manufacturers', 'manufacturer_id', 'manufacturerId', 'manufacturerName')
+		await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
+
 		document.getElementById('create-tool-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
+
 			const toolDetails = {
 				toolCode: document.getElementById('tool_code').value,
 				toolName: document.getElementById('tool_name').value,
@@ -30,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				manufacturerId: document.getElementById('manufacturer_id').value,
 				locationId: document.getElementById('location_id').value,
 			}
-            console.log(toolDetails)
+
 			try {
 				const response = await fetch('/tools/new', {
 					method: 'POST',
@@ -76,13 +118,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="text" id="edit_tool_name" value="${tool.toolName}" required />
                     <label for="edit_tool_image_url">Tool Image URL:</label>
                     <input type="text" id="edit_tool_image_url" value="${tool.toolImageUrl || ''}" />
-                    <label for="edit_manufacturer_id">Manufacturer ID:</label>
-                    <input type="number" id="edit_manufacturer_id" value="${tool.manufacturerId || ''}" />
-                    <label for="edit_location_id">Location ID:</label>
-                    <input type="number" id="edit_location_id" value="${tool.locationId || ''}" />
+					<label for="edit_manufacturer_id">Manufacturer:</label>
+					<select id="edit_manufacturer_id" name="manufacturerId"></select>
+					<label for="edit_location_id">Location:</label>
+					<select id="edit_location_id" name="locationId"></select>
                     <button type="submit">Save Tool</button>
                 </form>
             `
+
+			await populateDropdown('/misc/manufacturers', 'edit_manufacturer_id', 'manufacturerId', 'manufacturerName', tool.manufacturerId)
+			await populateDropdown('/misc/locations', 'edit_location_id', 'locationId', 'locationName', tool.locationId)
 
 			document.getElementById('edit-tool-form').addEventListener('submit', async (e) => {
 				e.preventDefault()
