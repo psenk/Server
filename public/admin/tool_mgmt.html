@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tool Management System Tool Management</title>
     <link href="../css/style.css" rel="stylesheet" />
-    <script type="text/javascript" src="../js/tool.js" defer></script>
+    <script src="../js/tool.js" defer></script>
 </head>
 
 <body>
@@ -38,52 +38,21 @@
 
     <!-- main section -->
     <div class="main-container">
-        <!-- Tool Section Left -->
+        <!-- left section -->
         <div class="left-section">
             <fieldset>
                 <legend>Tool Management</legend>
-                <!-- Tool ID Submit -->
-                <form id="tool-id-form" action="/tools/tool" method="get">
-                    <label for="tool-id" class="id-label">Enter Tool Code:</label>
-                    <div class="form-row">
-                        <input type="text" id="tool-id" name="tool_id" placeholder="Tool Code" required />
-                        <button type="submit" id="tool-submit-btn">Submit</button>
-                    </div>
-                </form>
-                <!-- Create New Tool Button -->
-                <div class="button-row">
-                    <button id="create-new-tool-btn">Create New Tool</button>
-                </div>
+                <button id="create-tool-btn">Create Tool</button>
+                <button id="edit-tool-btn">Edit Tool</button>
+                <button id="delete-tool-btn" class="delete-btn">Delete Tool</button>
             </fieldset>
         </div>
 
-        <!-- details section right -->
+        <!-- right section -->
         <div class="info-section" id="info-section">
-            <h2>Tool Information</h2>
-            <div id="user-info"></div>
-            <ul id="checked-out-tools"></ul>
-
-            <!-- New Tool Form (Initially Hidden) -->
-            <div id="new-item-form" style="display: none;">
-                <h2>Create New Tool</h2>
-                <form id="create-tool-form" action="/tools/new" method="post">
-                    <label for="tool_name">Tool Name:</label>
-                    <input type="text" id="tool_name" name="tool_name" required />
-                    <br />
-                    <label for="tool_image">Tool Image URL:</label>
-                    <input type="text" id="tool_image" name="tool_image" />
-                    <br />
-                    <label for="tool_code">Tool Code:</label>
-                    <input type="text" id="tool_code" name="tool_code" required />
-                    <br />
-                    <label for="manufacturer_id">Tool Manufacturer:</label>
-                    <input type="number" id="manufacturer_id" name="manufacturer_id" required />
-                    <br />
-                    <label for="location_id">Tool Location:</label>
-                    <input type="number" id="location_id" name="location_id" required />
-                    <br />
-                    <button type="submit">Save Tool</button>
-                </form>
+            <h2>Tool Details</h2>
+            <div id="details-content" style="display: none;">
+                <!-- Content will dynamically update based on button clicks -->
             </div>
         </div>
     </div>
