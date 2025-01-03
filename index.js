@@ -3,6 +3,7 @@ const express = require('express')
 require('dotenv').config()
 const { Pool } = require('pg')
 const axios = require('axios')
+const nodemailer = require('nodemailer');
 let checkoutToken = null
 
 const app = express()
@@ -618,9 +619,46 @@ app.get('/search', (req, res) => {
 	res.sendFile(__dirname + '/public/search.html')
 })
 
-// serve help page
-app.get('/help', (req, res) => {
-	res.sendFile(__dirname + '/public/help.html')
+// serve submit a ticket page
+app.get('/ticket', (req, res) => {
+	res.sendFile(__dirname + '/public/ticket.html')
+})
+
+// send support email
+app.post('/send-email', async (req, res) => {
+    const { to, subject, body } = req.body;
+
+    const transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
+        },
+		tls: {
+			rejectUnauthorized: false,
+		},
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        text: body,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).send('Email sent successfully.');
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).send('Failed to send email.');
+    }
+});
+
+
+// serve documentation page
+app.get('/docs', (req, res) => {
+	res.sendFile(__dirname + '/public/docs.html')
 })
 
 // serve user mgmt page

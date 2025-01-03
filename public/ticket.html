@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Management System Tool Management</title>
-    <link href="../css/style.css" rel="stylesheet" />
-    <script src="../js/user.js" defer></script>
+    <title>Tool Management System Ticket</title>
+    <link href="css/style.css" rel="stylesheet" />
+    <script src="js/ticket.js" defer></script>
 </head>
 
 <body>
@@ -43,24 +43,32 @@
         </div>
     </div>
 
-    <!-- main section -->
+    <!-- Main Section -->
     <div class="main-container">
-        <!-- left section -->
         <div class="left-section">
+            <h1>Submit a Ticket</h1>
+            <br />
             <fieldset>
-                <legend>User Management</legend>
-                <button id="create-user-btn">Create User</button>
-                <button id="edit-user-btn">Edit User</button>
-                <button id="delete-user-btn" class="delete-btn">Delete User</button>
-            </fieldset>
-        </div>
+                <legend>Ticket Information</legend>
+                <form id="ticket-form">
+                    <label for="subject" class="id-label">Subject:</label><br />
+                    <input type="text" id="subject" class="input-field" name="subject" required /><br /><br />
 
-        <!-- right section -->
-        <div class="info-section" id="info-section">
-            <h2>Tool Details</h2>
-            <div id="details-content" style="display: none;">
-                <!-- Content will dynamically update based on button clicks -->
-            </div>
+                    <label for="contact_number" class="id-label">Contact Number:</label><br />
+                    <input type="text" id="contact_number" class="input-field" name="contactNumber" required /><br /><br />
+
+                    <label for="email_address" class="id-label">Email Address:</label><br />
+                    <input type="email" id="email_address" class="input-field" name="emailAddress" required /><br /><br />
+
+                    <label for="location" class="id-label">Location:</label><br />
+                    <input type="text" id="location" class="input-field" name="location" required /><br /><br />
+
+                    <label for="description" class="id-label">Description of Problem:</label><br />
+                    <textarea id="description" class="input-field" name="description" rows="5" cols="50" required></textarea><br /><br />
+
+                    <button type="submit" id="submit-btn">Submit</button>
+                </form>
+            </fieldset>
         </div>
     </div>
 
