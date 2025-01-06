@@ -3,7 +3,7 @@ const express = require('express')
 require('dotenv').config()
 const { Pool } = require('pg')
 const axios = require('axios')
-const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer')
 let checkoutToken = null
 
 const app = express()
@@ -67,15 +67,20 @@ app.post('/auth/login', async (req, res) => {
 
 // checkouts
 // get user, create checkout session
-app.get('/checkout/user', async (req, res) => {
-	const { user_display_id } = req.query
+app.post('/checkout/start', async (req, res) => {
+	const { userDisplayId } = req.body
 
 	try {
-		const response = await axios.get('http://localhost:8080/checkout/user', {
-			params: { user_display_id },
+		const response = await axios.post('http://localhost:8080/checkout/start', {
+			userDisplayId,
 		})
-		checkoutToken = response.data.checkoutToken
-		res.json(response.data)
+
+		if (response.status === 200) {
+			const { user, checkoutToken, checkedOutTools } = response.data
+			res.json({ message: 'Checkout session started', user, checkoutToken, checkedOutTools })
+		} else {
+			res.status(response.status).send(response.data.message || 'Error starting checkout session')
+		}
 	} catch (error) {
 		if (error.response) {
 			if (error.response.status === 404) {
@@ -88,6 +93,37 @@ app.get('/checkout/user', async (req, res) => {
 			}
 		} else {
 			console.error(error)
+			res.status(500).send('Internal server error')
+		}
+	}
+})
+
+// checkout tool
+app.post('/checkout/tool/:toolCode', async (req, res) => {
+	const { toolCode } = req.params
+	const { checkoutToken, userDisplayId } = req.body
+
+	try {
+		const response = await axios.post(`http://localhost:8080/checkout/tool/${toolCode}`, {
+			checkoutToken,
+			userDisplayId,
+		})
+		console.log(response)
+
+		const { checkout, checkedOutTools } = response.data
+		res.json({ message: 'Checkout completed', checkout, checkedOutTools })
+	} catch (error) {
+		if (error.response) {
+			if (error.response.status === 400) {
+				res.status(400).send({'message': 'Tool not found'})
+			} else if (error.response.status === 403) {
+				res.status(403).send({'message': 'Tool is already checked out'})
+			} else if (error.response.status === 406) {
+				res.status(406).send({'message': 'Tool is not available for checkout'})
+			} else {
+				res.status(500).send({'message': 'Internal server error'})
+			}
+		} else {
 			res.status(500).send('Internal server error')
 		}
 	}
@@ -626,35 +662,34 @@ app.get('/ticket', (req, res) => {
 
 // send support email
 app.post('/send-email', async (req, res) => {
-    const { to, subject, body } = req.body;
+	const { to, subject, body } = req.body
 
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
-        },
+	const transporter = nodemailer.createTransport({
+		service: 'Gmail',
+		auth: {
+			user: process.env.EMAIL_USER,
+			pass: process.env.EMAIL_PASSWORD,
+		},
 		tls: {
 			rejectUnauthorized: false,
 		},
-    });
+	})
 
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to,
-        subject,
-        text: body,
-    };
+	const mailOptions = {
+		from: process.env.EMAIL_USER,
+		to,
+		subject,
+		text: body,
+	}
 
-    try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).send('Email sent successfully.');
-    } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).send('Failed to send email.');
-    }
-});
-
+	try {
+		await transporter.sendMail(mailOptions)
+		res.status(200).send('Email sent successfully.')
+	} catch (error) {
+		console.error('Error sending email:', error)
+		res.status(500).send('Failed to send email.')
+	}
+})
 
 // serve documentation page
 app.get('/docs', (req, res) => {
