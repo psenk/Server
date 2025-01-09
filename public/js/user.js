@@ -7,9 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const response = await fetch(endpoint)
 			let data = await response.json()
 
-			if (data.locations) {
-				data = data.locations
-			} else if (data.users) {
+			if (data.users) {
 				data = data.users
 			}
 
@@ -19,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!preselectedValue) {
 				const placeholderOption = document.createElement('option')
 				placeholderOption.value = ''
-				placeholderOption.textContent = `Select a ${dropdownId.includes('location') ? 'location' : 'supervisor'}`
+				placeholderOption.textContent = 'Select a supervisor'
 				placeholderOption.disabled = true
 				placeholderOption.selected = true
 				dropdown.appendChild(placeholderOption)
@@ -58,8 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="email" id="user_email" name="userEmail" required />
                 <label for="supervisor_id">Supervisor:</label>
 				<select id="supervisor_id" name="supervisorId"></select>
-				<label for="location_id">Location:</label>
-				<select id="location_id" name="locationId"></select>
                 <label for="user_admin">Admin?</label>
                 <input type="checkbox" id="user_admin" name="userAdmin" />
                 <label for="user_auth">Password (Admins Only):</label>
@@ -70,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `
 
 		await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
-		await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
 
 		document.getElementById('create-user-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
@@ -82,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				userContactNumber: document.getElementById('user_contact_number').value,
 				userEmail: document.getElementById('user_email').value,
 				supervisorId: document.getElementById('supervisor_id').value,
-				locationId: document.getElementById('location_id').value,
 				userAdmin: document.getElementById('user_admin').checked,
 				userAuth: document.getElementById('user_auth').value,
 			}
@@ -99,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					alert(data.message || 'User created successfully!')
 					form.reset()
 					await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
-					await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
 				} else if (response.status === 400) {
 					const errorData = await response.json()
 					alert(errorData.message || 'Invalid request. Please check your input.')
@@ -154,8 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="email" id="edit_user_email" value="${user.userEmail}" required />
                 <label for="edit_supervisor_id">Supervisor:</label>
                 <select id="edit_supervisor_id" name="supervisorId"></select>
-                <label for="edit_location_id">Location:</label>
-                <select id="edit_location_id" name="locationId"></select>
                 <label for="edit_user_admin">Is Admin:</label>
                 <input type="checkbox" id="edit_user_admin" ${user.userAdmin ? 'checked' : ''} />
                 <label for="edit_user_auth">Password (Admins Only):</label>
@@ -165,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `
 
 			await populateDropdown('/users/all', 'edit_supervisor_id', 'userId', 'userName', user.supervisorId)
-			await populateDropdown('/misc/locations', 'edit_location_id', 'locationId', 'locationName', user.locationId)
 
 			document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
 				e.preventDefault()
@@ -176,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					userContactNumber: document.getElementById('edit_user_contact_number').value,
 					userEmail: document.getElementById('edit_user_email').value,
 					supervisorId: document.getElementById('edit_supervisor_id').value,
-					locationId: document.getElementById('edit_location_id').value,
 					userAdmin: document.getElementById('edit_user_admin').checked,
 					userAuth: document.getElementById('edit_user_auth').value,
 				}
@@ -193,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						alert(data.message || 'User updated successfully!')
 						document.getElementById('edit-user-form').reset()
 						await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
-						await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
 					} else if (response.status === 400) {
 						const errorData = await response.json()
 						alert(errorData.message || 'Invalid request. Please check your input.')

@@ -100,29 +100,44 @@ document.getElementById('tool-in-form').addEventListener('submit', async functio
 		return
 	}
 
+	if (!checkoutToken) {
+		alert('No active checkout session. Please log in and try again.')
+		return
+	}
+
 	try {
 		const response = await fetch(`/checkout/tool/in/${toolCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ checkoutToken }),
 		})
 
 		if (response.ok) {
 			const data = await response.json()
 
 			if (Array.isArray(data.checkedOutTools) && data.checkedOutTools.length > 0) {
-				updateCheckedOutTools(data.checkedOutTools);
+				updateCheckedOutTools(data.checkedOutTools)
 			} else {
-				console.warn('No tools checked out');
-				updateCheckedOutTools([]);
+				console.warn('No tools checked out')
+				updateCheckedOutTools([])
 			}
-			
 		} else {
 			const errorData = await response.json()
-			alert(errorData.message || 'Error checking in tool.')
+			if (response.status === 400) {
+				alert(errorData.message || 'Checkout token is required.')
+			} else if (response.status === 401) {
+				alert(errorData.message || 'Invalid checkout session token.')
+			} else if (response.status === 404) {
+				alert(errorData.message || 'Tool or User not found or invalid checkout information.')
+			} else if (response.status === 409) {
+				alert(errorData.message || 'Tool has already been checked in or is not checked out.')
+			} else {
+				alert(errorData.message || 'Internal server error.')
+			}
 		}
 	} catch (error) {
 		console.error('Error checking in tool:', error)
-		alert('An error occurred. Please try again.')
+		alert(`Error checking in tool: ${error}`)
 	}
 })
 
@@ -139,8 +154,7 @@ async function fetchUserInfo(userDisplayId) {
             <p><strong>Name:</strong> ${user.userName}</p>
             <p><strong>Contact Number:</strong> ${user.userContactNumber}</p>
             <p><strong>Email:</strong> ${user.userEmail}</p>
-            <p><strong>Supervisor:</strong> ${user.supervisorName || 'N/A'}</p>
-            <p><strong>Location:</strong> ${user.locationName || 'N/A'}</p>`
+            <p><strong>Supervisor:</strong> ${user.supervisorName || 'N/A'}</p>`
 		} else {
 			alert(data.message || 'Error fetching user info')
 		}
@@ -154,11 +168,11 @@ function updateCheckedOutTools(tools) {
 	toolsList.innerHTML = ''
 
 	if (tools.length === 0) {
-        const noToolsMessage = document.createElement('p');
-        noToolsMessage.textContent = 'No tools are currently checked out.';
-        toolsList.appendChild(noToolsMessage);
-        return;
-    }
+		const noToolsMessage = document.createElement('p')
+		noToolsMessage.textContent = 'No tools are currently checked out.'
+		toolsList.appendChild(noToolsMessage)
+		return
+	}
 
 	tools.forEach((tool) => {
 		const listItem = document.createElement('li')

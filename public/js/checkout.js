@@ -111,7 +111,19 @@ document.getElementById('tool-out-form').addEventListener('submit', async functi
 
 		if (!response.ok) {
 			const errorData = await response.json()
-			alert(errorData.message || 'Error checking out tool.')
+			if (response.status === 400) {
+				alert(errorData.message || 'Tool not found.')
+			} else if (response.status === 401) {
+				alert(errorData.message || 'Invalid checkout session token.')
+			} else if (response.status === 403) {
+				alert(errorData.message || 'Tool is already checked out or user mismatch.')
+			} else if (response.status === 404) {
+				alert(errorData.message || 'User or Tool not found.')
+			} else if (response.status === 406) {
+				alert(errorData.message || 'Tool is not available for checkout.')
+			} else {
+				alert(errorData.message || 'Internal server error.')
+			}
 			return
 		}
 
@@ -142,8 +154,7 @@ async function fetchUserInfo(userDisplayId) {
             <p><strong>Name:</strong> ${user.userName}</p>
             <p><strong>Contact Number:</strong> ${user.userContactNumber}</p>
             <p><strong>Email:</strong> ${user.userEmail}</p>
-            <p><strong>Supervisor:</strong> ${user.supervisorName || 'N/A'}</p>
-            <p><strong>Location:</strong> ${user.locationName || 'N/A'}</p>`
+            <p><strong>Supervisor:</strong> ${user.supervisorName || 'N/A'}</p>`
 		} else {
 			alert(data.message || 'Error fetching user info')
 		}

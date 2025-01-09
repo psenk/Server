@@ -7,9 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const response = await fetch(endpoint)
 			let data = await response.json()
 
-			if (data.locations) {
-				data = data.locations
-			} else if (data.manufacturers) {
+			if (data.manufacturers) {
 				data = data.manufacturers
 			}
 
@@ -19,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!preselectedValue) {
 				const placeholderOption = document.createElement('option')
 				placeholderOption.value = ''
-				placeholderOption.textContent = `Select a ${dropdownId.includes('manufacturer') ? 'manufacturer' : 'location'}`
+				placeholderOption.textContent = 'Select a manufacturer'
 				placeholderOption.disabled = true
 				placeholderOption.selected = true
 				dropdown.appendChild(placeholderOption)
@@ -53,14 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="text" id="tool_image_url" name="toolImageUrl" />
 				<label for="manufacturer_id">Manufacturer:</label>
 				<select id="manufacturer_id" name="manufacturerId" ></select>
-				<label for="location_id">Location:</label>
-				<select id="location_id" name="locationId"></select>
                 <button type="submit">Create Tool</button>
             </form>
         `
 
 		await populateDropdown('/misc/manufacturers', 'manufacturer_id', 'manufacturerId', 'manufacturerName')
-		await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
 
 		document.getElementById('create-tool-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
@@ -70,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				toolName: document.getElementById('tool_name').value,
 				toolImageUrl: document.getElementById('tool_image_url').value,
 				manufacturerId: document.getElementById('manufacturer_id').value,
-				locationId: document.getElementById('location_id').value,
 			}
 
 			try {
@@ -120,14 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="text" id="edit_tool_image_url" value="${tool.toolImageUrl || ''}" />
 					<label for="edit_manufacturer_id">Manufacturer:</label>
 					<select id="edit_manufacturer_id" name="manufacturerId"></select>
-					<label for="edit_location_id">Location:</label>
-					<select id="edit_location_id" name="locationId"></select>
                     <button type="submit">Save Tool</button>
                 </form>
             `
 
 			await populateDropdown('/misc/manufacturers', 'edit_manufacturer_id', 'manufacturerId', 'manufacturerName', tool.manufacturerId)
-			await populateDropdown('/misc/locations', 'edit_location_id', 'locationId', 'locationName', tool.locationId)
 
 			document.getElementById('edit-tool-form').addEventListener('submit', async (e) => {
 				e.preventDefault()
@@ -137,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					toolName: document.getElementById('edit_tool_name').value,
 					toolImageUrl: document.getElementById('edit_tool_image_url').value,
 					manufacturerId: document.getElementById('edit_manufacturer_id').value,
-					locationId: document.getElementById('edit_location_id').value,
 				}
 
 				try {

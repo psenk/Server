@@ -139,23 +139,28 @@ app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 			userDisplayId,
 		})
 
-		const { checkout, checkedOutTools } = response.data
+		const { message, checkedOutTools } = response.data
 
 		// send to client
-		res.json({ message: 'Checkout completed', checkout, checkedOutTools })
+		res.json({ message, checkedOutTools })
 	} catch (error) {
 		if (error.response) {
-			if (error.response.status === 400) {
-				res.status(400).send({ message: 'Tool not found' })
-			} else if (error.response.status === 403) {
-				res.status(403).send({ message: 'Tool is already checked out' })
-			} else if (error.response.status === 406) {
-				res.status(406).send({ message: 'Tool is not available for checkout' })
+			const { status, data } = error.response
+			if (status === 400) {
+				res.status(400).send({ message: data.message || 'Tool not found.' })
+			} else if (status === 401) {
+				res.status(401).send({ message: data.message || 'Invalid checkout session token.' })
+			} else if (status === 403) {
+				res.status(403).send({ message: data.message || 'Tool is already checked out or user mismatch.' })
+			} else if (status === 404) {
+				res.status(404).send({ message: data.message || 'User or Tool not found.' })
+			} else if (status === 406) {
+				res.status(406).send({ message: data.message || 'Tool is not available for checkout.' })
 			} else {
-				res.status(500).send({ message: 'Internal server error' })
+				res.status(500).send({ message: data.message || 'Internal server error.' })
 			}
 		} else {
-			res.status(500).send('Internal server error')
+			res.status(500).send({ message: 'Internal server error.' })
 		}
 	}
 })
@@ -163,31 +168,40 @@ app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 // checkin tool
 app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 	const { toolCode } = req.params
+	const { checkoutToken } = req.body
 
 	try {
-		const response = await axios.post(`http://localhost:8080/checkout/tool/in/${toolCode}`)
+		// send to spring
+		const response = await axios.post(`http://localhost:8080/checkout/tool/in/${toolCode}`, {
+			checkoutToken,
+		})
 
 		if (response.status === 200) {
-			const { tool, checkout } = response.data
-			res.json({ message: response.data.message, tool, checkout })
+			const { message, checkedOutTools } = response.data
+			console.log(response.data)
+			// send to client
+			res.json({ message, checkedOutTools })
 		} else {
 			res.status(response.status).send(response.data.message || 'Error checking in tool')
 		}
 	} catch (error) {
 		if (error.response) {
-			if (error.response.status === 400) {
-				res.status(400).send({ message: 'Checkout ID is required' })
-			} else if (error.response.status === 404) {
-				res.status(404).send({ message: 'Invalid checkout ID or tool code' })
-			} else if (error.response.status === 409) {
-				res.status(409).send({ message: 'Tool is already checked in' })
+			const { status, data } = error.response
+			if (status === 400) {
+				res.status(400).send({ message: data.message || 'Checkout token is required.' })
+			} else if (status === 401) {
+				res.status(401).send({ message: data.message || 'Invalid checkout session token.' })
+			} else if (status === 404) {
+				res.status(404).send({ message: data.message || 'Tool or User not found or invalid checkout information.' })
+			} else if (status === 409) {
+				res.status(409).send({ message: data.message || 'Tool has already been checked in or is not checked out.' })
 			} else {
-				console.error(error)
-				res.status(500).send({ message: 'Internal server error' })
+				console.error('Unexpected error:', data)
+				res.status(500).send({ message: data.message || 'Internal server error.' })
 			}
 		} else {
-			console.error(error)
-			res.status(500).send('Internal server error')
+			console.error('Error with no response:', error)
+			res.status(500).send({ message: 'Internal server error.' })
 		}
 	}
 })
@@ -233,7 +247,7 @@ app.get('/tools/:toolCode', async (req, res) => {
 
 // create new tool
 app.post('/tools/new', async (req, res) => {
-	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null, locationId = null } = req.body
+	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null } = req.body
 
 	if (!toolName || !toolCode) {
 		return res.status(400).send('All require fields must be provided.')
@@ -251,7 +265,6 @@ app.post('/tools/new', async (req, res) => {
 			toolImageUrl,
 			toolCode,
 			manufacturerId,
-			locationId,
 		})
 
 		res.json(response.data)
@@ -269,7 +282,7 @@ app.post('/tools/new', async (req, res) => {
 // edit tool
 app.put('/tools/edit/:toolId', async (req, res) => {
 	const { toolId } = req.params
-	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null, locationId = null } = req.body
+	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null } = req.body
 
 	try {
 		// send to spring
@@ -278,7 +291,6 @@ app.put('/tools/edit/:toolId', async (req, res) => {
 			toolImageUrl,
 			toolCode,
 			manufacturerId,
-			locationId,
 		})
 
 		res.json(response.data)
@@ -296,6 +308,7 @@ app.delete('/tools/delete/:toolId', async (req, res) => {
 		// send to spring
 		const response = await axios.delete(`http://localhost:8080/tools/delete/${toolId}`)
 
+		// send to client
 		res.json(response.data)
 	} catch (error) {
 		console.error('Error deleting tool:', error)
@@ -348,7 +361,7 @@ app.get('/users/:displayId', async (req, res) => {
 
 // create new user
 app.post('/users/new', async (req, res) => {
-	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, locationId = null, userAdmin = false, userAuth = null } = req.body
+	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, userAdmin = false, userAuth = null } = req.body
 
 	// admin specific checks
 	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
@@ -364,7 +377,6 @@ app.post('/users/new', async (req, res) => {
 			userContactNumber,
 			userEmail,
 			supervisorId,
-			locationId,
 			userAdmin,
 			userAuth,
 		})
@@ -391,7 +403,7 @@ app.post('/users/new', async (req, res) => {
 // edit user
 app.put('/users/edit/:userId', async (req, res) => {
 	const { userId } = req.params
-	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, locationId = null, userAdmin = false, userAuth = null } = req.body
+	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, userAdmin = false, userAuth = null } = req.body
 
 	// admin specific checks
 	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
@@ -407,7 +419,6 @@ app.put('/users/edit/:userId', async (req, res) => {
 			userContactNumber,
 			userEmail,
 			supervisorId,
-			locationId,
 			userAdmin,
 			userAuth,
 		})
@@ -455,74 +466,6 @@ app.delete('/users/delete/:userId', async (req, res) => {
 		} else {
 			res.status(500).send({ message: 'Unexpected error occurred while deleting the user.' })
 		}
-	}
-})
-
-// locations
-// get locations
-app.get('/misc/locations', async (req, res) => {
-	try {
-		const response = await axios.get('http://localhost:8080/misc/locations')
-
-		res.json(response.data)
-	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching locations')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
-	}
-})
-
-// create new location
-app.post('/misc/locations/new', async (req, res) => {
-	const { locationName } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.post('http://localhost:8080/misc/locations/new', {
-			locationName,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error creating location:', error)
-		res.status(500).send('Error creating location')
-	}
-})
-
-// edit location
-app.put('/misc/locations/edit/:locationId', async (req, res) => {
-	const { locationId } = req.params
-	const { locationName } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.put(`http://localhost:8080/misc/locations/edit/${locationId}`, {
-			locationName,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error editing location:', error)
-		res.status(500).send('Error editing location')
-	}
-})
-
-// delete location
-app.delete('/misc/locations/delete/:locationId', async (req, res) => {
-	const { locationId } = req.params
-
-	try {
-		// send to spring
-		const response = await axios.delete(`http://localhost:8080/misc/locations/delete/${locationId}`)
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error deleting location:', error)
-		res.status(500).send('Error deleting location')
 	}
 })
 
@@ -595,154 +538,6 @@ app.delete('/misc/manufacturers/delete/:manufacturerId', async (req, res) => {
 	} catch (error) {
 		console.error('Error deleting manufacturer:', error)
 		res.status(500).send('Error deleting manufacturer')
-	}
-})
-
-// inspections
-// get inspections
-app.get('/misc/inspections', async (req, res) => {
-	try {
-		const response = await axios.get('http://localhost:8080/misc/inspections')
-
-		res.json(response.data)
-	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching inspections')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
-	}
-})
-
-// create new inspection
-app.post('/misc/inspections/new', async (req, res) => {
-	const { inspectionName, toolId, inspectionFrequency, inspectionDueDate, inspectionCompletedDate } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.post('http://localhost:8080/misc/inspections/new', {
-			inspectionName,
-			toolId,
-			inspectionFrequency,
-			inspectionDueDate,
-			inspectionCompletedDate,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error creating inspection:', error)
-		res.status(500).send('Error creating inspection')
-	}
-})
-
-// edit inspection
-app.put('/misc/inspections/edit/:inspectionId', async (req, res) => {
-	const { inspectionId } = req.params
-	const { inspectionName, toolId, inspectionFrequency, inspectionDueDate, inspectionCompletedDate } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.put(`http://localhost:8080/misc/inspections/edit/${inspectionId}`, {
-			inspectionName,
-			toolId,
-			inspectionFrequency,
-			inspectionDueDate,
-			inspectionCompletedDate,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error editing inspection:', error)
-		res.status(500).send('Error editing inspection')
-	}
-})
-
-// delete inspection
-app.delete('/misc/inspections/delete/:inspectionId', async (req, res) => {
-	const { inspectionId } = req.params
-
-	try {
-		// send to spring
-		const response = await axios.delete(`http://localhost:8080/misc/inspections/delete/${inspectionId}`)
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error deleting inspection:', error)
-		res.status(500).send('Error deleting inspection')
-	}
-})
-
-// parts
-// get parts
-app.get('/misc/parts', async (req, res) => {
-	try {
-		const response = await axios.get('http://localhost:8080/misc/parts')
-
-		res.json(response.data)
-	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching parts')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
-	}
-})
-
-// create new part
-app.post('/misc/parts/new', async (req, res) => {
-	const { partName, toolId, partQuantity } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.post('http://localhost:8080/misc/parts/new', {
-			partName,
-			toolId,
-			partQuantity,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error creating part:', error)
-		res.status(500).send('Error creating part')
-	}
-})
-
-// edit part
-app.put('/misc/parts/edit/:partId', async (req, res) => {
-	const { partId } = req.params
-	const { partName, toolId, partQuantity } = req.body
-
-	try {
-		// send to spring
-		const response = await axios.put(`http://localhost:8080/misc/parts/edit/${partId}`, {
-			partName,
-			toolId,
-			partQuantity,
-		})
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error editing part:', error)
-		res.status(500).send('Error editing part')
-	}
-})
-
-// delete part
-app.delete('/misc/parts/delete/:partId', async (req, res) => {
-	const { partId } = req.params
-
-	try {
-		// send to spring
-		const response = await axios.delete(`http://localhost:8080/misc/parts/delete/${partId}`)
-
-		res.json(response.data)
-	} catch (error) {
-		console.error('Error deleting part:', error)
-		res.status(500).send('Error deleting part')
 	}
 })
 
