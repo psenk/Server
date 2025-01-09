@@ -66,7 +66,7 @@ app.post('/auth/login', async (req, res) => {
 })
 
 // checkouts
-// get user, create checkout session
+// start checkout session
 app.post('/checkout/start', async (req, res) => {
 	const { userDisplayId } = req.body
 
@@ -98,32 +98,95 @@ app.post('/checkout/start', async (req, res) => {
 	}
 })
 
+// end checkout session
+app.post('/checkout/end', async (req, res) => {
+	const { checkoutToken } = req.body
+
+	try {
+		const response = await axios.post('http://localhost:8080/checkout/end', {
+			checkoutToken,
+		})
+
+		if (response.status === 200) {
+			res.json({ message: response.data.message })
+		} else {
+			res.status(response.status).send(response.data.message || 'Error ending checkout session')
+		}
+	} catch (error) {
+		if (error.response) {
+			if (error.response.status === 400) {
+				res.status(404).send('Invalid checkout session token')
+			} else if (error.response.status === 400) {
+				res.status(400).send('Checkout token is required')
+			} else {
+				res.status(500).send('Internal server error')
+			}
+		} else {
+			res.status(500).send('Internal server error')
+		}
+	}
+})
+
 // checkout tool
-app.post('/checkout/tool/:toolCode', async (req, res) => {
+app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 	const { toolCode } = req.params
 	const { checkoutToken, userDisplayId } = req.body
 
 	try {
-		const response = await axios.post(`http://localhost:8080/checkout/tool/${toolCode}`, {
+		// send to spring
+		const response = await axios.post(`http://localhost:8080/checkout/tool/out/${toolCode}`, {
 			checkoutToken,
 			userDisplayId,
 		})
-		console.log(response)
 
 		const { checkout, checkedOutTools } = response.data
+
+		// send to client
 		res.json({ message: 'Checkout completed', checkout, checkedOutTools })
 	} catch (error) {
 		if (error.response) {
 			if (error.response.status === 400) {
-				res.status(400).send({'message': 'Tool not found'})
+				res.status(400).send({ message: 'Tool not found' })
 			} else if (error.response.status === 403) {
-				res.status(403).send({'message': 'Tool is already checked out'})
+				res.status(403).send({ message: 'Tool is already checked out' })
 			} else if (error.response.status === 406) {
-				res.status(406).send({'message': 'Tool is not available for checkout'})
+				res.status(406).send({ message: 'Tool is not available for checkout' })
 			} else {
-				res.status(500).send({'message': 'Internal server error'})
+				res.status(500).send({ message: 'Internal server error' })
 			}
 		} else {
+			res.status(500).send('Internal server error')
+		}
+	}
+})
+
+// checkin tool
+app.post('/checkout/tool/in/:toolCode', async (req, res) => {
+	const { toolCode } = req.params
+
+	try {
+		const response = await axios.post(`http://localhost:8080/checkout/tool/in/${toolCode}`)
+
+		if (response.status === 200) {
+			const { tool, checkout } = response.data
+			res.json({ message: response.data.message, tool, checkout })
+		} else {
+			res.status(response.status).send(response.data.message || 'Error checking in tool')
+		}
+	} catch (error) {
+		if (error.response) {
+			if (error.response.status === 400) {
+				res.status(400).send({ message: 'Checkout ID is required' })
+			} else if (error.response.status === 404) {
+				res.status(404).send({ message: 'Invalid checkout ID or tool code' })
+			} else if (error.response.status === 409) {
+				res.status(409).send({ message: 'Tool is already checked in' })
+			} else {
+				console.error(error)
+				res.status(500).send({ message: 'Internal server error' })
+			}
+		} else {
+			console.error(error)
 			res.status(500).send('Internal server error')
 		}
 	}
@@ -247,14 +310,16 @@ app.get('/users/all', async (req, res) => {
 		// send to spring
 		const response = await axios.get('http://localhost:8080/users/all')
 
+		// send to client
 		res.json(response.data)
 	} catch (error) {
 		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching users')
+			const { status, data } = error.response
+			console.error('Error response from server:', data)
+			res.status(status).send(data.message || 'Error fetching users.')
 		} else {
 			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
+			res.status(500).send({ message: 'Internal server error occurred while fetching users.' })
 		}
 	}
 })
@@ -267,24 +332,27 @@ app.get('/users/:displayId', async (req, res) => {
 		// send to spring
 		const response = await axios.get(`http://localhost:8080/users/${displayId}`)
 
+		// send to client
 		res.json(response.data)
 	} catch (error) {
 		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching user')
+			const { status, data } = error.response
+			console.error('Error response from server:', data)
+			res.status(status).send(data.message || 'Error fetching user.')
 		} else {
 			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
+			res.status(500).send({ message: 'Internal server error occurred while fetching user.' })
 		}
 	}
 })
 
 // create new user
 app.post('/users/new', async (req, res) => {
-	const { userDisplayId, userName, userContactNumber, userEmail, userSupervisorId = null, userLocationId = null, userAdmin = false, userAuth = null } = req.body
+	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, locationId = null, userAdmin = false, userAuth = null } = req.body
 
-	if (userAdmin && !userAuth) {
-		res.status(400).send('Admin users must have a password')
+	// admin specific checks
+	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
+		res.status(406).send({ message: 'Admin users require a password.' })
 		return
 	}
 
@@ -295,20 +363,27 @@ app.post('/users/new', async (req, res) => {
 			userName,
 			userContactNumber,
 			userEmail,
-			userSupervisorId,
-			userLocationId,
+			supervisorId,
+			locationId,
 			userAdmin,
 			userAuth,
 		})
 
-		res.send(response.data)
+		// send to client
+		res.json(response.data)
 	} catch (error) {
+		console.error('Error creating user:', error)
+
 		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error creating user')
+			const { status, data } = error.response
+
+			if (status === 400 || status === 406 || status === 409) {
+				res.status(status).send(data)
+			} else {
+				res.status(500).send({ message: 'An internal server error occurred while creating the user.' })
+			}
 		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
+			res.status(500).send({ message: 'Unexpected error occurred while creating user.' })
 		}
 	}
 })
@@ -317,6 +392,12 @@ app.post('/users/new', async (req, res) => {
 app.put('/users/edit/:userId', async (req, res) => {
 	const { userId } = req.params
 	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, locationId = null, userAdmin = false, userAuth = null } = req.body
+
+	// admin specific checks
+	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
+		res.status(406).send({ message: 'Admin users require a password.' })
+		return
+	}
 
 	try {
 		// send to spring
@@ -331,24 +412,49 @@ app.put('/users/edit/:userId', async (req, res) => {
 			userAuth,
 		})
 
+		// send to client
 		res.json(response.data)
 	} catch (error) {
 		console.error('Error editing user:', error)
-		res.status(500).send('Error editing user')
+
+		if (error.response) {
+			const { status, data } = error.response
+
+			if (status === 400 || status === 406 || status === 409) {
+				res.status(status).send(data)
+			} else {
+				res.status(500).send({ message: 'An internal server error occurred while editing the user.' })
+			}
+		} else {
+			res.status(500).send({ message: 'Unexpected error occurred while editing user.' })
+		}
 	}
 })
 
 // delete user
 app.delete('/users/delete/:userId', async (req, res) => {
 	const { userId } = req.params
+
 	try {
 		// send to spring
 		const response = await axios.delete(`http://localhost:8080/users/delete/${userId}`)
 
+		// send to client
 		res.json(response.data)
 	} catch (error) {
 		console.error('Error deleting user:', error)
-		res.status(500).send('Error deleting user')
+
+		if (error.response) {
+			const { status, data } = error.response
+
+			if (status === 404) {
+				res.status(404).send(data || { message: `User with ID ${userId} not found.` })
+			} else {
+				res.status(500).send(data || { message: 'An internal server error occurred while deleting the user.' })
+			}
+		} else {
+			res.status(500).send({ message: 'Unexpected error occurred while deleting the user.' })
+		}
 	}
 })
 

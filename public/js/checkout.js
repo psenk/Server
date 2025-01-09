@@ -7,18 +7,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	const dropdownContent = document.getElementById('checkout-dropdown-content')
 
 	if (currentPage.includes('/checkout')) {
-		dropdownButton.innerHTML = `Checkout <img src="/images/caret_down.png" alt="Dropdown">` // Corrected innerHTML
-		dropdownContent.innerHTML = `<a href="/checkin">Checkin</a>` // Correctly update dropdown content
-		dropdownButton.setAttribute('href', '/checkout') // Update href correctly
+		dropdownButton.innerHTML = `Checkout <img src="/images/caret_down.png" alt="Dropdown">`
+		dropdownContent.innerHTML = `<a href="/checkin">Checkin</a>`
+		dropdownButton.setAttribute('href', '/checkout')
 	} else if (currentPage.includes('/checkin')) {
-		dropdownButton.innerHTML = `Checkin <img src="/images/caret_down.png" alt="Dropdown">` // Corrected innerHTML
-		dropdownContent.innerHTML = `<a href="/checkout">Checkout</a>` // Correctly update dropdown content
-		dropdownButton.setAttribute('href', '/checkin') // Update href correctly
+		dropdownButton.innerHTML = `Checkin <img src="/images/caret_down.png" alt="Dropdown">`
+		dropdownContent.innerHTML = `<a href="/checkout">Checkout</a>`
+		dropdownButton.setAttribute('href', '/checkin')
 	}
 })
 
-// user id submission
-document.getElementById('user-id-form').addEventListener('submit', async function (e) {
+// start checkout session
+document.getElementById('checkout-session-form').addEventListener('submit', async function (e) {
 	e.preventDefault()
 
 	const userDisplayId = document.getElementById('user-id').value
@@ -36,7 +36,8 @@ document.getElementById('user-id-form').addEventListener('submit', async functio
 			checkoutToken = data.checkoutToken
 			tools = data.checkedOutTools
 
-			document.getElementById('tool-code-section').style.display = 'block'
+			document.getElementById('tool-out-section').style.display = 'block'
+			document.getElementById('end-session-section').style.display = 'block'
 			document.getElementById('user-submit-btn').style.visibility = 'hidden'
 			document.getElementById('checked-out-tools-label').style.display = 'block'
 
@@ -46,12 +47,51 @@ document.getElementById('user-id-form').addEventListener('submit', async functio
 			alert(data.message || 'Error starting checkout session')
 		}
 	} catch (error) {
+		console.error(error)
 		alert('An error has occured.  Please try again.')
 	}
 })
 
-// tool code submission
-document.getElementById('tool-code-form').addEventListener('submit', async function (e) {
+// end checkout session
+document.getElementById('end-session-form').addEventListener('submit', async function (e) {
+	e.preventDefault()
+
+	if (!checkoutToken) {
+		alert('No active checkout session to end.')
+		return
+	}
+
+	try {
+		const response = await fetch('/checkout/end', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ checkoutToken }),
+		})
+
+		if (response.ok) {
+			const data = await response.json()
+			alert(data.message)
+
+			checkoutToken = null
+			document.getElementById('checkout-session-form').reset()
+			document.getElementById('tool-out-section').style.display = 'none'
+			document.getElementById('end-session-section').style.display = 'none'
+			document.getElementById('checked-out-tools').innerHTML = ''
+			document.getElementById('user-info').innerHTML = ''
+			document.getElementById('user-submit-btn').style.visibility = 'visible'
+			document.getElementById('checked-out-tools-label').style.display = 'none'
+		} else {
+			const errorData = await response.json()
+			alert(errorData.message || 'Error ending checkout session.')
+		}
+	} catch (error) {
+		console.error('Error ending checkout session:', error)
+		alert('An error occurred. Please try again.')
+	}
+})
+
+// checkout tool
+document.getElementById('tool-out-form').addEventListener('submit', async function (e) {
 	e.preventDefault()
 
 	const toolCode = document.getElementById('tool-code').value
@@ -63,7 +103,7 @@ document.getElementById('tool-code-form').addEventListener('submit', async funct
 	}
 
 	try {
-		const response = await fetch(`/checkout/tool/${toolCode}`, {
+		const response = await fetch(`/checkout/tool/out/${toolCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ checkoutToken, userDisplayId }),
@@ -76,12 +116,13 @@ document.getElementById('tool-code-form').addEventListener('submit', async funct
 		}
 
 		const data = await response.json()
-
-		if (data.checkedOutTools) {
-			updateCheckedOutTools(data.checkedOutTools)
+		if (Array.isArray(data.checkedOutTools) && data.checkedOutTools.length > 0) {
+			updateCheckedOutTools(data.checkedOutTools);
 		} else {
-			console.warn('No tools checked out')
+			console.warn('No tools checked out');
+			updateCheckedOutTools([]);
 		}
+		
 	} catch (error) {
 		console.error('Error checking out tool:', error)
 		alert(`Error checking out tool: ${error}`)
@@ -114,6 +155,13 @@ async function fetchUserInfo(userDisplayId) {
 function updateCheckedOutTools(tools) {
 	const toolsList = document.getElementById('checked-out-tools')
 	toolsList.innerHTML = ''
+
+	if (tools.length === 0) {
+        const noToolsMessage = document.createElement('p');
+        noToolsMessage.textContent = 'No tools are currently checked out.';
+        toolsList.appendChild(noToolsMessage);
+        return;
+    }
 
 	tools.forEach((tool) => {
 		const listItem = document.createElement('li')

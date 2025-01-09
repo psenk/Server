@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tool Management System Checkout</title>
     <link href="css/style.css" rel="stylesheet" />
-    <script type="text/javascript" src="js/checkout.js" defer></script>
+    <script src="js/checkout.js" defer></script>
 </head>
 
 <body>
@@ -51,21 +51,26 @@
             <fieldset>
                 <legend>Checkout</legend>
                 <!-- display id submit-->
-                <form id="user-id-form">
-                    <label for="user-id" class="id-label">Enter User ID to begin checkout:</label>
+                <form id="checkout-session-form">
+                    <label for="user-id" class="id-label">Enter User ID to begin checkout session:</label>
                     <br />
                     <input type="text" id="user-id" class="input-field" name="userDisplayId"
                         placeholder="User Display ID" required />
                     <button type="submit" id="user-submit-btn">Submit</button>
                 </form>
                 <!-- tool code submit (default hidden)-->
-                <div id="tool-code-section" style="display: none;">
-                    <form id="tool-code-form">
+                <div id="tool-out-section" style="display: none;">
+                    <form id="tool-out-form">
                         <label for="tool-code" class="id-label">Enter Tool Code:</label>
                         <br />
                         <input type="text" id="tool-code" class="input-field" name="toolCode" placeholder="Tool Code"
                             required />
                         <button type="submit" id="tool-submit-btn">Submit</button>
+                    </form>
+                </div>
+                <div id="end-session-section" style="display: none;">
+                    <form id="end-session-form">
+                        <button type="submit" id="finished-btn">Finished</button>
                     </form>
                 </div>
             </fieldset>

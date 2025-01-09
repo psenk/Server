@@ -46,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>Create User</h3>
             <form id="create-user-form">
                 <label for="user_display_id">User Display ID:</label>
+				<h6>This is what will be used to checkout items.<br>
+				Display ID must be 5 characters in length.<br>
+				Use only digits 0-9 or letters a-z, A-Z.<br><br></h6>
                 <input type="text" id="user_display_id" name="userDisplayId" required />
                 <label for="user_name">User Name:</label>
                 <input type="text" id="user_name" name="userName" required />
@@ -60,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label for="user_admin">Admin?</label>
                 <input type="checkbox" id="user_admin" name="userAdmin" />
                 <label for="user_auth">Password (Admins Only):</label>
+				<h6>Passwords must contain:<br>- one number<br>- one lowercase letter<br>- one uppercase letter<br>- one symbol,<br>- be eight characters in length minimum.<br><br>
                 <input type="password" id="user_auth" name="userAuth" />
                 <button type="submit">Create User</button>
             </form>
@@ -70,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		document.getElementById('create-user-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
+			const form = e.target
+
 			const userDetails = {
 				userDisplayId: document.getElementById('user_display_id').value,
 				userName: document.getElementById('user_name').value,
@@ -88,8 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
 					body: JSON.stringify(userDetails),
 				})
 
-				const data = await response.json()
-				alert(data.message || 'User created successfully!')
+				if (response.ok) {
+					const data = await response.json()
+					alert(data.message || 'User created successfully!')
+					form.reset()
+					await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
+					await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
+				} else if (response.status === 400) {
+					const errorData = await response.json()
+					alert(errorData.message || 'Invalid request. Please check your input.')
+				} else if (response.status === 406) {
+					alert('Admin users require a password.')
+				} else if (response.status === 409) {
+					alert('Display ID taken.')
+				} else if (response.status === 500) {
+					alert('Internal server error occurred. Please try again later.')
+				} else {
+					const errorText = await response.text()
+					console.error('Unexpected error:', errorText)
+					alert('An unexpected error occurred. Please try again.')
+				}
 			} catch (error) {
 				console.error('Error creating user:', error)
 				alert('Error creating user.')
@@ -118,27 +142,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			detailsContent.style.display = 'block'
 			detailsContent.innerHTML = `
-                <h3>Edit User</h3>
-                <form id="edit-user-form">
-                    <label for="edit_user_display_id">User Display ID:</label>
-                    <input type="text" id="edit_user_display_id" value="${user.userDisplayId}" required />
-                    <label for="edit_user_name">User Name:</label>
-                    <input type="text" id="edit_user_name" value="${user.userName}" required />
-                    <label for="edit_user_contact_number">Contact Number:</label>
-                    <input type="text" id="edit_user_contact_number" value="${user.userContactNumber || ''}" />
-                    <label for="edit_user_email">Email:</label>
-                    <input type="email" id="edit_user_email" value="${user.userEmail}" required />
-                    <label for="edit_supervisor_id">Supervisor:</label>
-				    <select id="edit_supervisor_id" name="supervisorId"></select>
-				    <label for="edit_location_id">Location:</label>
-				    <select id="edit_location_id" name="locationId"></select>
-                    <label for="edit_user_admin">Is Admin:</label>
-                    <input type="checkbox" id="edit_user_admin" ${user.userAdmin ? 'checked' : ''} />
-                    <label for="edit_user_auth">Password (Admins Only):</label>
-                    <input type="password" id="edit_user_auth" placeholder="Only required for Admin users" />
-                    <button type="submit">Save User</button>
-                </form>
-            `
+            <h3>Edit User</h3>
+            <form id="edit-user-form">
+                <label for="edit_user_display_id">User Display ID:</label>
+                <input type="text" id="edit_user_display_id" value="${user.userDisplayId}" required />
+                <label for="edit_user_name">User Name:</label>
+                <input type="text" id="edit_user_name" value="${user.userName}" required />
+                <label for="edit_user_contact_number">Contact Number:</label>
+                <input type="text" id="edit_user_contact_number" value="${user.userContactNumber || ''}" required />
+                <label for="edit_user_email">Email:</label>
+                <input type="email" id="edit_user_email" value="${user.userEmail}" required />
+                <label for="edit_supervisor_id">Supervisor:</label>
+                <select id="edit_supervisor_id" name="supervisorId"></select>
+                <label for="edit_location_id">Location:</label>
+                <select id="edit_location_id" name="locationId"></select>
+                <label for="edit_user_admin">Is Admin:</label>
+                <input type="checkbox" id="edit_user_admin" ${user.userAdmin ? 'checked' : ''} />
+                <label for="edit_user_auth">Password (Admins Only):</label>
+                <input type="password" id="edit_user_auth" placeholder="Only required for Admin users" />
+                <button type="submit">Save User</button>
+            </form>
+        `
 
 			await populateDropdown('/users/all', 'edit_supervisor_id', 'userId', 'userName', user.supervisorId)
 			await populateDropdown('/misc/locations', 'edit_location_id', 'locationId', 'locationName', user.locationId)
@@ -164,8 +188,26 @@ document.addEventListener('DOMContentLoaded', () => {
 						body: JSON.stringify(updatedUserDetails),
 					})
 
-					const data = await response.json()
-					alert(data.message || 'User updated successfully!')
+					if (response.ok) {
+						const data = await response.json()
+						alert(data.message || 'User updated successfully!')
+						document.getElementById('edit-user-form').reset()
+						await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
+						await populateDropdown('/misc/locations', 'location_id', 'locationId', 'locationName')
+					} else if (response.status === 400) {
+						const errorData = await response.json()
+						alert(errorData.message || 'Invalid request. Please check your input.')
+					} else if (response.status === 409) {
+						alert('Display ID taken. Please choose a different one.')
+					} else if (response.status === 406) {
+						alert('Admin users require a valid password.')
+					} else if (response.status === 500) {
+						alert('An internal server error occurred. Please try again later.')
+					} else {
+						const errorText = await response.text()
+						console.error('Unexpected error:', errorText)
+						alert('An unexpected error occurred. Please try again.')
+					}
 				} catch (error) {
 					console.error('Error updating user:', error)
 					alert('Error updating user.')
@@ -187,8 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			const response = await fetch(`/users/${displayId}`)
-			const data = await response.json()
+			if (!response.ok) {
+				const errorData = await response.json()
+				alert(errorData.message || 'User not found.')
+				return
+			}
 
+			const data = await response.json()
 			if (!data.user) {
 				alert(data.message || 'User not found.')
 				return
@@ -203,8 +250,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					headers: { 'Content-Type': 'application/json' },
 				})
 
-				const deleteData = await deleteResponse.json()
-				alert(deleteData.message || 'User deleted successfully!')
+				if (deleteResponse.ok) {
+					const deleteData = await deleteResponse.json()
+					alert(deleteData.message || 'User deleted successfully!')
+				} else if (deleteResponse.status === 404) {
+					const errorData = await deleteResponse.json()
+					alert(errorData.message || 'User not found.')
+				} else {
+					alert('An unexpected error occurred while attempting to delete the user.')
+				}
 			} catch (error) {
 				console.error('Error deleting user:', error)
 				alert('Error deleting user.')
