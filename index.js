@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/public/login.html')
 })
 
-// authentication route
+// authentication
 app.post('/auth/login', async (req, res) => {
 	const { username, password } = req.body
 
@@ -61,6 +61,31 @@ app.post('/auth/login', async (req, res) => {
 			}
 		} else {
 			res.status(500).send('Internal server error')
+		}
+	}
+})
+
+// search
+app.get('/find', async (req, res) => {
+	const { type, query } = req.query
+
+	if (!type || !query) {
+		return res.status(400).json({ error: 'Both "type" and "query" parameters are required.' })
+	}
+	try {
+		// send to spring
+		const response = await axios.get('http://localhost:8080/find/', {
+			params: { type, query },
+		})
+
+		res.json(response.data)
+	} catch (error) {
+		console.error('Error fetching search results:', error.message)
+
+		if (error.response) {
+			res.status(error.response.status).json(error.response.data)
+		} else {
+			res.status(500).json({ error: 'An error occurred while processing the search request.' })
 		}
 	}
 })
@@ -282,7 +307,7 @@ app.post('/tools/new', async (req, res) => {
 // edit tool
 app.put('/tools/edit/:toolId', async (req, res) => {
 	const { toolId } = req.params
-	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null } = req.body
+	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null, toolStatus = null, toolCheckedOut = false } = req.body
 
 	try {
 		// send to spring
@@ -291,6 +316,8 @@ app.put('/tools/edit/:toolId', async (req, res) => {
 			toolImageUrl,
 			toolCode,
 			manufacturerId,
+			toolStatus,
+			toolCheckedOut,
 		})
 
 		res.json(response.data)

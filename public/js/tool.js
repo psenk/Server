@@ -1,6 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
 	const detailsContent = document.getElementById('details-content')
 
+	const ToolStatus = {
+		CHECKED_OUT: 'CHECKED_OUT',
+		AVAILABLE: 'AVAILABLE',
+		BROKEN: 'BROKEN',
+		OUT_FOR_INSPECTION: 'OUT_FOR_INSPECTION',
+	}
+
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
@@ -153,6 +160,72 @@ document.addEventListener('DOMContentLoaded', () => {
 		} catch (error) {
 			console.error('Error fetching tool:', error)
 			alert('Error fetching tool.')
+		}
+	})
+
+	// Update tool status
+	document.getElementById('update-tool-btn').addEventListener('click', async () => {
+		const toolCode = prompt('Enter the Tool Code to edit:')
+		if (!toolCode) {
+			alert('Tool Code is required.')
+			return
+		}
+
+		try {
+			const response = await fetch(`/tools/${toolCode}`)
+			const data = await response.json()
+
+			if (!data.tool) {
+				alert(data.message || 'Tool not found.')
+				return
+			}
+
+			const tool = data.tool
+
+			detailsContent.style.display = 'block'
+			detailsContent.innerHTML = `
+            <h3>Update Tool Status</h3>
+            <form id="update-tool-form">
+                <label for="tool_checked_out">Tool Checked Out:</label>
+                <input type="checkbox" id="tool_checked_out" name="toolCheckedOut" ${tool.toolCheckedOut ? 'checked' : ''}"/>
+                <label for="tool_status">Tool Status:</label>
+                <select id="tool_status" name="toolStatus">
+				                    ${Object.values(ToolStatus)
+										.map((status) => `<option value="${status}" ${tool.toolStatus === status ? 'selected' : ''}>${status.replace(/_/g, ' ')}</option>`)
+										.join('')}</select>
+                <button type="submit">Update Tool</button>
+            </form>
+        `
+
+			document.getElementById('update-tool-form').addEventListener('submit', async (e) => {
+				e.preventDefault()
+				const form = e.target
+
+				const toolDetails = {
+					toolCode: tool.toolCode,
+					toolName: tool.toolName,
+					toolCheckedOut: document.getElementById('tool_checked_out').checked,
+					toolStatus: document.getElementById('tool_status').value,
+				}
+
+				try {
+					const response = await fetch(`/tools/edit/${tool.toolId}`, {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(toolDetails),
+					})
+
+					const data = await response.json()
+					alert(data.message || 'Tool updated successfully!')
+					form.reset()
+				} catch (error) {
+					console.error('Error updating tool:', error)
+					alert('Error updating tool.')
+				}
+			})
+		} catch (error) {
+			console.error('Error updating tool:', error)
+			alert('Error updating tool.')
 		}
 	})
 
