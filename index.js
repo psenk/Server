@@ -178,7 +178,7 @@ app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 
 		if (response.status === 200) {
 			const { message, checkedOutTools } = response.data
-			console.log(response.data)
+
 			// send to client
 			res.json({ message, checkedOutTools })
 		} else {

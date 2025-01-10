@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		document.getElementById('create-tool-form').addEventListener('submit', async (e) => {
 			e.preventDefault()
+			const form = e.target
 
 			const toolDetails = {
 				toolCode: document.getElementById('tool_code').value,
@@ -76,6 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const data = await response.json()
 				alert(data.message || 'Tool created successfully!')
+				form.reset()
+				await populateDropdown('/misc/manufacturers', 'manufacturer_id', 'manufacturerId', 'manufacturerName')
 			} catch (error) {
 				console.error('Error creating tool:', error)
 				alert('Error creating tool.')
@@ -122,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			document.getElementById('edit-tool-form').addEventListener('submit', async (e) => {
 				e.preventDefault()
+				const form = e.target
 
 				const updatedToolDetails = {
 					toolCode: document.getElementById('edit_tool_code').value,
@@ -139,6 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					const data = await response.json()
 					alert(data.message || 'Tool updated successfully!')
+					form.reset()
+					await populateDropdown('/misc/manufacturers', 'edit_manufacturer_id', 'manufacturerId', 'manufacturerName')
 				} catch (error) {
 					console.error('Error updating tool:', error)
 					alert('Error updating tool.')

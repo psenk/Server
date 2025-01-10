@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
 				e.preventDefault()
+				const form = e.target
 
 				const updatedUserDetails = {
 					userDisplayId: document.getElementById('edit_user_display_id').value,
@@ -180,8 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (response.ok) {
 						const data = await response.json()
 						alert(data.message || 'User updated successfully!')
-						document.getElementById('edit-user-form').reset()
-						await populateDropdown('/users/all', 'supervisor_id', 'userId', 'userName')
+						form.reset()
+						await populateDropdown('/users/all', 'edit_supervisor_id', 'userId', 'userName')
 					} else if (response.status === 400) {
 						const errorData = await response.json()
 						alert(errorData.message || 'Invalid request. Please check your input.')
