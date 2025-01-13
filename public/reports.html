@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Management System Report Generation</title>
+    <link href="../css/style.css" rel="stylesheet" />
+    <script src="../js/reports.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <!-- navigation bar -->
+    <div class="navbar">
+        <div class="dropdown">
+            <a href="/checkout" class="dropbtn" id="checkout-dropdown">Checkout
+                <img src="/images/caret_down.png" alt="Dropdown">
+            </a>
+            <div id="checkout-dropdown-content" class="dropdown-content">
+                <a href="/checkin">Checkin</a>
+            </div>
+        </div>
+        <a href="/search">Search</a>
+        <a href="/reports">Reports</a>
+        <div class="dropdown">
+            <button class="dropbtn">Admin
+                <img src="/images/caret_down.png" alt="Dropdown">
+            </button>
+            <div class="dropdown-content">
+                <a href="/user_mgmt">User Management</a>
+                <a href="/tool_mgmt">Tool Management</a>
+                <a href="/misc_mgmt">Miscellaneous</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropbtn">Help
+                <img src="/images/caret_down.png" alt="Dropdown">
+            </button>
+            <div class="dropdown-content">
+                <a href="/ticket">Submit a Ticket</a>
+                <a href="/docs">Documentation</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- main section -->
+    <div class="main-container">
+        <!-- left section -->
+        <div class="left-section">
+
+            <fieldset>
+                <legend>Generate Report</legend>
+                <h5>All fields are CASE-SENSITIVE.</h5>
+                <form id="report-form">
+                    <label for="report-type">Report Type:</label>
+                    <select id="report-type" name="reportType">
+                        <option value="user-reports">User Reports</option>
+                        <option value="tool-reports">Tool Reports</option>
+                        <option value="checkout-reports">Checkout Reports</option>
+                        <option value="misc-reports">Misc Reports</option>
+                    </select>
+
+                    <!-- user reports -->
+                    <div id="user-reports-section" style="margin-top: 1em;">
+                        <label for="user-report-type">Select a report:</label>
+                        <select id="user-report-type" name="userReportType">
+                            <option value="user-checkout-history">User Checkout History</option>
+                            <option value="view-user-info">View User Info</option>
+                            <option value="view-all-users">View All Users</option>
+                        </select>
+
+                        <div id="user-id-field" style="margin-top: 1em;">
+                            <label for="user-display-id">Enter User Display ID:</label>
+                            <input type="text" id="user-display-id" name="userDisplayId" placeholder="User Display ID"
+                                class="input-field">
+                        </div>
+                    </div>
+
+                    <!-- tool reports -->
+                    <div id="tool-reports-section" style="display: none; margin-top: 1em;">
+                        <label for="tool-report-type">Select a report:</label>
+                        <select id="tool-report-type" name="toolReportType">
+                            <option value="tool-checkout-history">Tool Checkout History</option>
+                            <option value="view-tool-info">View Tool Info</option>
+                            <option value="view-all-tools">View All Tools</option>
+                            <option value="tool-status-report">Tool Status Report</option>
+                        </select>
+
+                        <div id="tool-code-field" style="display: none; margin-top: 1em;">
+                            <label for="tool-code">Enter Tool Code:</label>
+                            <input type="text" id="tool-code" name="toolCode" placeholder="Tool Code"
+                                class="input-field">
+                        </div>
+                    </div>
+
+                    <!-- checkout reports -->
+                    <div id="checkout-reports-section" style="display: none; margin-top: 1em;">
+                        <label for="checkout-report-type">Select a report:</label>
+                        <select id="checkout-report-type" name="checkoutReportType">
+                            <option value="view-active-checkouts">View Active Checkouts</option>
+                            <option value="view-all-checkouts">View All Checkouts</option>
+                            <option value="checkout-date-history">Checkouts with Dates</option>
+                        </select>
+
+                        <div id="checkout-dates" style="display: none; margin-top: 1em;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <label>
+                                    <input type="radio" name="dateFilter" id="before-date" value="before-date" checked>
+                                    Before Date
+                                </label>
+                                <label>
+                                    <input type="radio" name="dateFilter" id="between-dates" value="between-dates">
+                                    Between
+                                    Dates
+                                </label>
+                                <label>
+                                    <input type="radio" name="dateFilter" id="after-date" value="after-date"> After Date
+                                </label>
+                            </div>
+
+                            <div style="margin-top: 1em;">
+                                <label for="start-date" style="display: none;" id="start-date-label"></label>
+                                <input type="date" id="start-date" name="startDate" style="display: none;"
+                                    class="input-field">
+
+                                <label for="end-date" style="display: none;" id="end-date-label"></label>
+                                <input type="date" id="end-date" name="endDate" style="display: none;"
+                                    class="input-field">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- misc reports -->
+                    <div id="misc-reports-section" style="display: none; margin-top: 1em;">
+                        <label for="misc-report-type">Select a report:</label>
+                        <select id="misc-report-type" name="miscReportType">
+                            <option value="view-manufacturer">View Manufacturer</option>
+                            <option value="view-all-manufacturers">View All Manufacturers</option>
+                        </select>
+
+                        <div id="manufacturer-name-field" style="display: none; margin-top: 1em;">
+                            <label for="manufacturer-name">Enter Manufacturer Name:</label>
+                            <input type="text" id="manufacturer-name" name="manufacturerName"
+                                placeholder="Manufacturer Name" class="input-field">
+                        </div>
+                    </div>
+
+                    <button type="submit">Generate</button>
+                </form>
+            </fieldset>
+
+        </div>
+
+        <!-- right section -->
+        <div class="info-section" id="info-section">
+            <div id="report-results" class="info-section">
+                <h2>Report Results</h2>
+                <div id="export-buttons"></div>
+                <table id="report-table" style="width: 100%; border-collapse: collapse;">
+                    <thead id="report-table-head">
+
+                    </thead>
+                    <tbody id="report-table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

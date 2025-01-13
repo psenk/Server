@@ -5,6 +5,7 @@ const { Pool } = require('pg')
 const axios = require('axios')
 const nodemailer = require('nodemailer')
 let checkoutToken = null
+const BASE_URL = 'http://localhost:8080'
 
 const app = express()
 const PORT = 3000
@@ -40,7 +41,7 @@ app.post('/auth/login', async (req, res) => {
 	}
 
 	try {
-		const response = await axios.post('http://localhost:8080/auth/login', {
+		const response = await axios.post(`${BASE_URL}/auth/login`, {
 			username,
 			password,
 		})
@@ -74,19 +75,13 @@ app.get('/find', async (req, res) => {
 	}
 	try {
 		// send to spring
-		const response = await axios.get('http://localhost:8080/find/', {
+		const response = await axios.get(`${BASE_URL}/find`, {
 			params: { type, query },
 		})
 
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error fetching search results:', error.message)
-
-		if (error.response) {
-			res.status(error.response.status).json(error.response.data)
-		} else {
-			res.status(500).json({ error: 'An error occurred while processing the search request.' })
-		}
+		handleAxiosError(error, res, 'An error occurred while processing the search request.')
 	}
 })
 
@@ -96,7 +91,7 @@ app.post('/checkout/start', async (req, res) => {
 	const { userDisplayId } = req.body
 
 	try {
-		const response = await axios.post('http://localhost:8080/checkout/start', {
+		const response = await axios.post(`${BASE_URL}/checkout/start`, {
 			userDisplayId,
 		})
 
@@ -128,7 +123,7 @@ app.post('/checkout/end', async (req, res) => {
 	const { checkoutToken } = req.body
 
 	try {
-		const response = await axios.post('http://localhost:8080/checkout/end', {
+		const response = await axios.post(`${BASE_URL}/checkout/end`, {
 			checkoutToken,
 		})
 
@@ -159,7 +154,7 @@ app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post(`http://localhost:8080/checkout/tool/out/${toolCode}`, {
+		const response = await axios.post(`${BASE_URL}/checkout/tool/out/${toolCode}`, {
 			checkoutToken,
 			userDisplayId,
 		})
@@ -197,7 +192,7 @@ app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post(`http://localhost:8080/checkout/tool/in/${toolCode}`, {
+		const response = await axios.post(`${BASE_URL}/checkout/tool/in/${toolCode}`, {
 			checkoutToken,
 		})
 
@@ -236,17 +231,11 @@ app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 app.get('/tools/all', async (req, res) => {
 	try {
 		// send to spring
-		const response = await axios.get('http://localhost:8080/tools/all')
+		const response = await axios.get(`${BASE_URL}/tools/all`)
 
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching tools')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error fetching tools.')
 	}
 })
 
@@ -256,17 +245,11 @@ app.get('/tools/:toolCode', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.get(`http://localhost:8080/tools/${toolCode}`)
+		const response = await axios.get(`${BASE_URL}/tools/${toolCode}`)
 
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching tool')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error fetching tool.')
 	}
 })
 
@@ -285,7 +268,7 @@ app.post('/tools/new', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post('http://localhost:8080/tools/new', {
+		const response = await axios.post(`${BASE_URL}/tools/new`, {
 			toolName,
 			toolImageUrl,
 			toolCode,
@@ -294,13 +277,7 @@ app.post('/tools/new', async (req, res) => {
 
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error creating tool')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error creating tool.')
 	}
 })
 
@@ -311,7 +288,7 @@ app.put('/tools/edit/:toolId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.put(`http://localhost:8080/tools/edit/${toolId}`, {
+		const response = await axios.put(`${BASE_URL}/tools/edit/${toolId}`, {
 			toolName,
 			toolImageUrl,
 			toolCode,
@@ -322,8 +299,7 @@ app.put('/tools/edit/:toolId', async (req, res) => {
 
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error editing tool:', error)
-		res.status(500).send('Error editing tool')
+		handleAxiosError(error, res, 'Error editing tool.')
 	}
 })
 
@@ -333,13 +309,12 @@ app.delete('/tools/delete/:toolId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.delete(`http://localhost:8080/tools/delete/${toolId}`)
+		const response = await axios.delete(`${BASE_URL}/tools/delete/${toolId}`)
 
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error deleting tool:', error)
-		res.status(500).send('Error deleting tool')
+		handleAxiosError(error, res, 'Error deleting tool.')
 	}
 })
 
@@ -348,19 +323,12 @@ app.delete('/tools/delete/:toolId', async (req, res) => {
 app.get('/users/all', async (req, res) => {
 	try {
 		// send to spring
-		const response = await axios.get('http://localhost:8080/users/all')
+		const response = await axios.get(`${BASE_URL}/users/all`)
 
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			const { status, data } = error.response
-			console.error('Error response from server:', data)
-			res.status(status).send(data.message || 'Error fetching users.')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send({ message: 'Internal server error occurred while fetching users.' })
-		}
+		handleAxiosError(error, res, 'Error fetching users.')
 	}
 })
 
@@ -370,19 +338,12 @@ app.get('/users/:displayId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.get(`http://localhost:8080/users/${displayId}`)
+		const response = await axios.get(`${BASE_URL}/users/${displayId}`)
 
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			const { status, data } = error.response
-			console.error('Error response from server:', data)
-			res.status(status).send(data.message || 'Error fetching user.')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send({ message: 'Internal server error occurred while fetching user.' })
-		}
+		handleAxiosError(error, res, 'Error fetching user.')
 	}
 })
 
@@ -398,7 +359,7 @@ app.post('/users/new', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post('http://localhost:8080/users/new', {
+		const response = await axios.post(`${BASE_URL}/users/new`, {
 			userDisplayId,
 			userName,
 			userContactNumber,
@@ -440,7 +401,7 @@ app.put('/users/edit/:userId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.put(`http://localhost:8080/users/edit/${userId}`, {
+		const response = await axios.put(`${BASE_URL}/users/edit/${userId}`, {
 			userDisplayId,
 			userName,
 			userContactNumber,
@@ -475,7 +436,7 @@ app.delete('/users/delete/:userId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.delete(`http://localhost:8080/users/delete/${userId}`)
+		const response = await axios.delete(`${BASE_URL}/users/delete/${userId}`)
 
 		// send to client
 		res.json(response.data)
@@ -500,17 +461,11 @@ app.delete('/users/delete/:userId', async (req, res) => {
 // get manufacturers
 app.get('/misc/manufacturers', async (req, res) => {
 	try {
-		const response = await axios.get('http://localhost:8080/misc/manufacturers')
+		const response = await axios.get(`${BASE_URL}/misc/manufacturers`)
 
 		res.json(response.data)
 	} catch (error) {
-		if (error.response) {
-			console.error('Error response from server:', error.response.data)
-			res.status(error.response.status).send(error.response.data.message || 'Error fetching manufacturers')
-		} else {
-			console.error('Unexpected error:', error)
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error fetching manufacturers.')
 	}
 })
 
@@ -520,7 +475,7 @@ app.post('/misc/manufacturers/new', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post('http://localhost:8080/misc/manufacturers/new', {
+		const response = await axios.post(`${BASE_URL}/misc/manufacturers/new`, {
 			manufacturerName,
 			manufacturerContactNumber,
 			manufacturerEmail,
@@ -528,8 +483,7 @@ app.post('/misc/manufacturers/new', async (req, res) => {
 
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error creating manufacturer:', error)
-		res.status(500).send('Error creating manufacturer')
+		handleAxiosError(error, res, 'Error fetching manufacturer.')
 	}
 })
 
@@ -540,7 +494,7 @@ app.put('/misc/manufacturers/edit/:manufacturerId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.put(`http://localhost:8080/misc/manufacturers/edit/${manufacturerId}`, {
+		const response = await axios.put(`${BASE_URL}/misc/manufacturers/edit/${manufacturerId}`, {
 			manufacturerName,
 			manufacturerContactNumber,
 			manufacturerEmail,
@@ -548,8 +502,7 @@ app.put('/misc/manufacturers/edit/:manufacturerId', async (req, res) => {
 
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error editing manufacturer:', error)
-		res.status(500).send('Error editing manufacturer')
+		handleAxiosError(error, res, 'Error editing manufacturer.')
 	}
 })
 
@@ -559,12 +512,11 @@ app.delete('/misc/manufacturers/delete/:manufacturerId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.delete(`http://localhost:8080/misc/manufacturers/delete/${manufacturerId}`)
+		const response = await axios.delete(`${BASE_URL}/misc/manufacturers/delete/${manufacturerId}`)
 
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error deleting manufacturer:', error)
-		res.status(500).send('Error deleting manufacturer')
+		handleAxiosError(error, res, 'Error deleting manufacturer.')
 	}
 })
 
@@ -581,6 +533,107 @@ app.get('/checkin', (req, res) => {
 // serve search page
 app.get('/search', (req, res) => {
 	res.sendFile(__dirname + '/public/search.html')
+})
+
+// reports
+// serve reports page
+app.get('/reports', (req, res) => {
+	res.sendFile(__dirname + '/public/reports.html')
+})
+
+app.get('/reports/user', async (req, res) => {
+	const { type, userDisplayId } = req.query
+
+	if (!type) {
+		return res.status(400).send('The "type" query parameter is required.')
+	}
+	if (['user-checkout-history', 'view-user-info'].includes(type) && !userDisplayId) {
+		return res.status(400).send('The "userDisplayId" query parameter is required for this report type.')
+	}
+
+	try {
+		const response = await axios.get(`${BASE_URL}/reports/user`, {
+			params: { type, userDisplayId },
+		})
+
+		res.json(response.data)
+	} catch (error) {
+		handleAxiosError(error, res, 'Error fetching user report.')
+	}
+})
+
+app.get('/reports/tool', async (req, res) => {
+	const { type, toolCode } = req.query
+
+	if (!type) {
+		return res.status(400).send('The "type" query parameter is required.')
+	}
+	if (['tool-checkout-history', 'view-tool-info'].includes(type) && !toolCode) {
+		return res.status(400).send('The "toolCode" query parameter is required for this report type.')
+	}
+
+	try {
+		const response = await axios.get(`${BASE_URL}/reports/tool`, {
+			params: { type, toolCode },
+		})
+
+		res.json(response.data)
+	} catch (error) {
+		handleAxiosError(error, res, 'Error fetching tool report')
+	}
+})
+
+app.get('/reports/checkout', async (req, res) => {
+	const { type, time, startDate, endDate } = req.query
+
+	if (!type) {
+		return res.status(400).send('The "type" query parameter is required.')
+	}
+	if (type === 'checkout-date-history') {
+		if (!time) {
+			return res.status(400).send('The "time" query parameter is required for this report type.')
+		}
+		if (time === 'before-date' && !startDate) {
+			return res.status(400).send('The "startDate" query parameter is required for "before-date".')
+		}
+		if (time === 'between-dates' && (!startDate || !endDate)) {
+			return res.status(400).send('Both "startDate" and "endDate" query parameters are required for "between-dates".')
+		}
+		if (time === 'after-date' && !endDate) {
+			return res.status(400).send('The "endDate" query parameter is required for "after-date".')
+		}
+	}
+
+	try {
+		const response = await axios.get(`${BASE_URL}/reports/checkout`, {
+			params: { type, time, startDate, endDate },
+		})
+
+		res.json(response.data)
+	} catch (error) {
+		handleAxiosError(error, res, 'Error fetching checkout report')
+	}
+})
+
+app.get('/reports/misc', async (req, res) => {
+	const { type, manufacturerName } = req.query
+
+	if (!type) {
+		return res.status(400).send('The "type" query parameter is required.')
+	}
+	if (type === 'view-manufacturer' && !manufacturerName) {
+		return res.status(400).send('The "manufacturerName" query parameter is required for this report type.')
+	}
+
+	try {
+		const response = await axios.get(`${BASE_URL}/reports/misc`, {
+			params: { type, manufacturerName },
+		})
+
+		res.json(response.data)
+	} catch (error) {
+		handleAxiosError(error, res, 'Error fetching misc report')
+	}
 })
 
 // serve submit a ticket page
@@ -643,3 +696,13 @@ app.get('/misc_mgmt', (req, res) => {
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`)
 })
+
+function handleAxiosError(error, res, defaultMessage) {
+	if (error.response) {
+		console.error('Error response from server:', error.response.data)
+		return res.status(error.response.status).send(error.response.data.message || defaultMessage)
+	} else {
+		console.error('Unexpected error:', error)
+		return res.status(500).send('Internal server error')
+	}
+}

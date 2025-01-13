@@ -13,11 +13,19 @@ body {
 	position: relative;
 }
 
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #34495e;
+}
+
 /* login page */
 .login-label {
 	padding-left: 40px;
 	font-size: 1em;
 	color: #34495e;
+	width: 100%;
 }
 
 .login-wrap {
@@ -415,13 +423,6 @@ fieldset .delete-btn:hover {
 	margin-top: 15px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #34495e;
-}
-
 #details-content form label {
 	display: block;
 	margin: 10px 0 5px;
@@ -716,4 +717,20 @@ option {
     padding: 20px;
     background-color: #f9f9f9;
     border-right: 2px solid #ddd;
+}
+
+#report-table th, #report-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+#report-table th {
+    background-color: #f4f4f4;
+}
+
+#report-table {
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: collapse;
 }
