@@ -201,3 +201,34 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 })
+
+document.getElementById('logout-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('You are not logged in!');
+        return;
+    }
+
+    fetch('/auth/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+        }
+    })
+        .then((response) => {
+            if (response.ok) {
+                localStorage.removeItem('token');
+                sessionStorage.clear();
+                window.location.href = '/';
+            } else {
+                alert('Failed to log out. Please try again.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error during logout:', error);
+        });
+});

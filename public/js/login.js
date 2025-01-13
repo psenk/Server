@@ -1,5 +1,5 @@
-document.querySelector('#login').addEventListener('submit', async (event) => {
-	event.preventDefault()
+document.querySelector('#login').addEventListener('submit', async (e) => {
+	e.preventDefault()
 
 	const username = document.querySelector('#username').value
 	const password = document.querySelector('#password').value
@@ -12,6 +12,8 @@ document.querySelector('#login').addEventListener('submit', async (event) => {
 		})
 
 		if (response.ok) {
+			const data = await response.json();
+            localStorage.setItem('token', data.token);
 			window.location.href = '/checkout'
 		} else {
 			const error = await response.text()

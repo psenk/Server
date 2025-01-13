@@ -4,7 +4,6 @@ require('dotenv').config()
 const { Pool } = require('pg')
 const axios = require('axios')
 const nodemailer = require('nodemailer')
-let checkoutToken = null
 const BASE_URL = 'http://localhost:8080'
 
 const app = express()
@@ -32,6 +31,7 @@ app.get('/', (req, res) => {
 })
 
 // authentication
+// login
 app.post('/auth/login', async (req, res) => {
 	const { username, password } = req.body
 
@@ -47,22 +47,39 @@ app.post('/auth/login', async (req, res) => {
 		})
 
 		if (response.status === 200) {
-			res.redirect('/checkout')
+			const token = response.data.token
+			res.status(200).json({ message: 'Login successful', token })
 		}
 	} catch (error) {
-		console.error('Error code: ', error.response.status)
+		handleAxiosError(error, res, 'Error logging in.')
+	}
+})
 
-		if (error.response && error.response.status) {
-			if (error.response.status === 401) {
-				res.status(401).send(error.response.data.message)
-			} else if (error.response.status === 400) {
-				res.status(400).send(error.response.data.message)
-			} else {
-				res.status(500).send('Internal server error')
+// logout
+app.post('/auth/logout', async (req, res) => {
+	const token = req.headers.authorization?.split(' ')[1]
+
+	if (!token) {
+		res.status(400).send('Token is required for logout')
+		return
+	}
+
+	try {
+		const response = await axios.post(
+			`${BASE_URL}/auth/logout`,
+			{},
+			{
+				headers: { Authorization: `Bearer ${token}` },
 			}
+		)
+
+		if (response.status === 200) {
+			res.status(200).send('Logout successful')
 		} else {
-			res.status(500).send('Internal server error')
+			res.status(response.status).send(response.data.message)
 		}
+	} catch (error) {
+		handleAxiosError(error, res, 'Error logging out.')
 	}
 })
 
@@ -102,19 +119,7 @@ app.post('/checkout/start', async (req, res) => {
 			res.status(response.status).send(response.data.message || 'Error starting checkout session')
 		}
 	} catch (error) {
-		if (error.response) {
-			if (error.response.status === 404) {
-				res.status(404).send('User not found')
-			} else if (error.response.status === 400) {
-				res.status(400).send('Invalid or missing parameters')
-			} else {
-				console.error(error)
-				res.status(500).send('Internal server error')
-			}
-		} else {
-			console.error(error)
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error starting checkout session')
 	}
 })
 
@@ -133,17 +138,7 @@ app.post('/checkout/end', async (req, res) => {
 			res.status(response.status).send(response.data.message || 'Error ending checkout session')
 		}
 	} catch (error) {
-		if (error.response) {
-			if (error.response.status === 400) {
-				res.status(404).send('Invalid checkout session token')
-			} else if (error.response.status === 400) {
-				res.status(400).send('Checkout token is required')
-			} else {
-				res.status(500).send('Internal server error')
-			}
-		} else {
-			res.status(500).send('Internal server error')
-		}
+		handleAxiosError(error, res, 'Error ending checkout session.')
 	}
 })
 
@@ -372,19 +367,7 @@ app.post('/users/new', async (req, res) => {
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error creating user:', error)
-
-		if (error.response) {
-			const { status, data } = error.response
-
-			if (status === 400 || status === 406 || status === 409) {
-				res.status(status).send(data)
-			} else {
-				res.status(500).send({ message: 'An internal server error occurred while creating the user.' })
-			}
-		} else {
-			res.status(500).send({ message: 'Unexpected error occurred while creating user.' })
-		}
+		handleAxiosError(error, res, 'Error creating user.')
 	}
 })
 
@@ -414,19 +397,7 @@ app.put('/users/edit/:userId', async (req, res) => {
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error editing user:', error)
-
-		if (error.response) {
-			const { status, data } = error.response
-
-			if (status === 400 || status === 406 || status === 409) {
-				res.status(status).send(data)
-			} else {
-				res.status(500).send({ message: 'An internal server error occurred while editing the user.' })
-			}
-		} else {
-			res.status(500).send({ message: 'Unexpected error occurred while editing user.' })
-		}
+		handleAxiosError(error, res, 'Error editing user.')
 	}
 })
 
@@ -441,19 +412,7 @@ app.delete('/users/delete/:userId', async (req, res) => {
 		// send to client
 		res.json(response.data)
 	} catch (error) {
-		console.error('Error deleting user:', error)
-
-		if (error.response) {
-			const { status, data } = error.response
-
-			if (status === 404) {
-				res.status(404).send(data || { message: `User with ID ${userId} not found.` })
-			} else {
-				res.status(500).send(data || { message: 'An internal server error occurred while deleting the user.' })
-			}
-		} else {
-			res.status(500).send({ message: 'Unexpected error occurred while deleting the user.' })
-		}
+		handleAxiosError(error, res, 'Error deleting user.')
 	}
 })
 
@@ -518,27 +477,6 @@ app.delete('/misc/manufacturers/delete/:manufacturerId', async (req, res) => {
 	} catch (error) {
 		handleAxiosError(error, res, 'Error deleting manufacturer.')
 	}
-})
-
-// serve checkout page
-app.get('/checkout', (req, res) => {
-	res.sendFile(__dirname + '/public/checkout.html')
-})
-
-// serve checkin page
-app.get('/checkin', (req, res) => {
-	res.sendFile(__dirname + '/public/checkin.html')
-})
-
-// serve search page
-app.get('/search', (req, res) => {
-	res.sendFile(__dirname + '/public/search.html')
-})
-
-// reports
-// serve reports page
-app.get('/reports', (req, res) => {
-	res.sendFile(__dirname + '/public/reports.html')
 })
 
 app.get('/reports/user', async (req, res) => {
@@ -636,11 +574,6 @@ app.get('/reports/misc', async (req, res) => {
 	}
 })
 
-// serve submit a ticket page
-app.get('/ticket', (req, res) => {
-	res.sendFile(__dirname + '/public/ticket.html')
-})
-
 // send support email
 app.post('/send-email', async (req, res) => {
 	const { to, subject, body } = req.body
@@ -667,29 +600,20 @@ app.post('/send-email', async (req, res) => {
 		await transporter.sendMail(mailOptions)
 		res.status(200).send('Email sent successfully.')
 	} catch (error) {
-		console.error('Error sending email:', error)
-		res.status(500).send('Failed to send email.')
+		handleAxiosError(error, res, 'Error sending email.')
 	}
 })
 
-// serve documentation page
-app.get('/docs', (req, res) => {
-	res.sendFile(__dirname + '/public/docs.html')
-})
+// serve pages
+app.get('/:page', (req, res) => {
+	const validPages = ['checkout', 'checkin', 'search', 'reports', 'ticket', 'docs', 'user_mgmt', 'tool_mgmt', 'misc_mgmt']
+	const page = req.params.page
 
-// serve user mgmt page
-app.get('/user_mgmt', (req, res) => {
-	res.sendFile(__dirname + '/public/admin/user_mgmt.html')
-})
-
-// serve tool mgmt page
-app.get('/tool_mgmt', (req, res) => {
-	res.sendFile(__dirname + '/public/admin/tool_mgmt.html')
-})
-
-// serve misc mgmt page
-app.get('/misc_mgmt', (req, res) => {
-	res.sendFile(__dirname + '/public/admin/misc_mgmt.html')
+	if (validPages.includes(page)) {
+		res.sendFile(`${__dirname}/public/${page}.html`)
+	} else {
+		res.status(404).send('Page not found')
+	}
 })
 
 // start server

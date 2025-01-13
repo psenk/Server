@@ -129,12 +129,11 @@ document.getElementById('tool-out-form').addEventListener('submit', async functi
 
 		const data = await response.json()
 		if (Array.isArray(data.checkedOutTools) && data.checkedOutTools.length > 0) {
-			updateCheckedOutTools(data.checkedOutTools);
+			updateCheckedOutTools(data.checkedOutTools)
 		} else {
-			console.warn('No tools checked out');
-			updateCheckedOutTools([]);
+			console.warn('No tools checked out')
+			updateCheckedOutTools([])
 		}
-		
 	} catch (error) {
 		console.error('Error checking out tool:', error)
 		alert(`Error checking out tool: ${error}`)
@@ -168,11 +167,11 @@ function updateCheckedOutTools(tools) {
 	toolsList.innerHTML = ''
 
 	if (tools.length === 0) {
-        const noToolsMessage = document.createElement('p');
-        noToolsMessage.textContent = 'No tools are currently checked out.';
-        toolsList.appendChild(noToolsMessage);
-        return;
-    }
+		const noToolsMessage = document.createElement('p')
+		noToolsMessage.textContent = 'No tools are currently checked out.'
+		toolsList.appendChild(noToolsMessage)
+		return
+	}
 
 	tools.forEach((tool) => {
 		const listItem = document.createElement('li')
@@ -180,3 +179,34 @@ function updateCheckedOutTools(tools) {
 		toolsList.appendChild(listItem)
 	})
 }
+
+document.getElementById('logout-btn').addEventListener('click', function (e) {
+	e.preventDefault()
+
+	const token = localStorage.getItem('token')
+
+	if (!token) {
+		alert('You are not logged in!')
+		return
+	}
+
+	fetch('/auth/logout', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`,
+		},
+	})
+		.then((response) => {
+			if (response.ok) {
+				localStorage.removeItem('token')
+				sessionStorage.clear()
+				window.location.href = '/'
+			} else {
+				alert('Failed to log out. Please try again.')
+			}
+		})
+		.catch((error) => {
+			console.error('Error during logout:', error)
+		})
+})

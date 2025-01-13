@@ -138,6 +138,19 @@ label {
 	position: relative;
 }
 
+.logout-btn {
+    margin-left: auto;
+    padding: 10px 15px;
+    color: white;
+    text-decoration: none;
+    background-color: #ff4d4d;
+    border-radius: 5px;
+}
+
+.logout-btn:hover {
+    background-color: #cc0000;
+}
+
 .dropdown {
 	position: relative;
 }
