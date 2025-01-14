@@ -3,8 +3,9 @@ const express = require('express')
 require('dotenv').config()
 const { Pool } = require('pg')
 const axios = require('axios')
+const cors = require('cors')
 const nodemailer = require('nodemailer')
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'https://capstone-tms-app.fly.dev'
 
 const app = express()
 const PORT = 3000
@@ -18,12 +19,10 @@ const pool = new Pool({
 	port: process.env.DB_PORT,
 })
 
-// parse JSON/form data
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-
-// serve static files
 app.use(express.static('public'))
+app.use(cors({ origin: 'https://capstone-tms-app.fly.dev' }))
 
 // serve login page
 app.get('/', (req, res) => {
@@ -618,7 +617,7 @@ app.get('/:page', (req, res) => {
 
 // start server
 app.listen(PORT, () => {
-	console.log(`Server is running on http://localhost:${PORT}`)
+	console.log('Server is running')
 })
 
 function handleAxiosError(error, res, defaultMessage) {
