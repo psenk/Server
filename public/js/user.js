@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint)
+			const response = await fetch(endpoint, {
+				credentials: 'include',
+			})
 			let data = await response.json()
 
 			if (data.users) {
@@ -85,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await fetch('/users/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
+					credentials: 'include',
 					body: JSON.stringify(userDetails),
 				})
 
@@ -117,13 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Edit User
 	document.getElementById('edit-user-btn').addEventListener('click', async () => {
 		const displayId = prompt('Enter the User Display ID to edit:')
+
 		if (!displayId) {
 			alert('User Display ID is required.')
 			return
 		}
 
 		try {
-			const response = await fetch(`/users/${displayId}`)
+			const response = await fetch(`/users/${displayId}`, {
+				credentials: 'include',
+			})
 			const data = await response.json()
 
 			if (!data.user) {
@@ -175,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const response = await fetch(`/users/edit/${user.userId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
+						credentials: 'include',
 						body: JSON.stringify(updatedUserDetails),
 					})
 
@@ -211,13 +218,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Delete User
 	document.getElementById('delete-user-btn').addEventListener('click', async () => {
 		const displayId = prompt('Enter the User Display ID to delete:')
+
 		if (!displayId) {
 			alert('User Display ID is required.')
 			return
 		}
 
 		try {
-			const response = await fetch(`/users/${displayId}`)
+			const response = await fetch(`/users/${displayId}`, {
+				credentials: 'include',
+			})
 			if (!response.ok) {
 				const errorData = await response.json()
 				alert(errorData.message || 'User not found.')
@@ -231,12 +241,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			const confirmDelete = confirm(`Are you sure you want to delete the user "${data.user.userName}" (${data.user.userDisplayId})?`)
+
 			if (!confirmDelete) return
 
 			try {
 				const deleteResponse = await fetch(`/users/delete/${data.user.userId}`, {
 					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
+					credentials: 'include',
 				})
 
 				if (deleteResponse.ok) {
@@ -260,32 +271,21 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 document.getElementById('logout-btn').addEventListener('click', function (e) {
-    e.preventDefault();
+	e.preventDefault()
 
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert('You are not logged in!');
-        return;
-    }
-
-    fetch('/auth/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        }
-    })
-        .then((response) => {
-            if (response.ok) {
-                localStorage.removeItem('token');
-                sessionStorage.clear();
-                window.location.href = '/';
-            } else {
-                alert('Failed to log out. Please try again.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error during logout:', error);
-        });
-});
+	fetch('/auth/logout', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		credentials: 'include',
+	})
+		.then((response) => {
+			if (response.ok) {
+				window.location.href = '/'
+			} else {
+				alert('Failed to log out. Please try again.')
+			}
+		})
+		.catch((error) => {
+			console.error('Error during logout:', error)
+		})
+})

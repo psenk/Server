@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	})
 
 	const reportForm = document.getElementById('report-form')
+
 	reportForm.addEventListener('submit', async (e) => {
 		e.preventDefault()
 
@@ -187,9 +188,10 @@ async function fetchAndDisplayReport(url, params) {
 	try {
 		const queryString = new URLSearchParams(params).toString()
 		const fullUrl = `${url}?${queryString}`
-		console.log(`fullurl: ${fullUrl}`)
 
-		const response = await fetch(fullUrl)
+		const response = await fetch(fullUrl, {
+			credentials: 'include',
+		})
 		if (!response.ok) {
 			throw new Error(`HTTP error, status: ${response.status}`)
 		}
@@ -253,7 +255,7 @@ function addExportButtons(data) {
 
 	const csvButton = document.createElement('button')
 	csvButton.textContent = 'Export to CSV'
-	csvButton.style.marginRight = '10px';
+	csvButton.style.marginRight = '10px'
 	csvButton.onclick = () => exportToCSV(data)
 	buttonContainer.appendChild(csvButton)
 
@@ -268,12 +270,7 @@ function addExportButtons(data) {
 
 function exportToCSV(data) {
 	const headers = Object.keys(data[0])
-	const csvContent = [
-		headers.join(','),
-		...data.map(
-			(row) => headers.map((header) => `"${row[header] || ''}"`).join(',')
-		),
-	].join('\n')
+	const csvContent = [headers.join(','), ...data.map((row) => headers.map((header) => `"${row[header] || ''}"`).join(','))].join('\n')
 
 	const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
 	const link = document.createElement('a')
@@ -290,32 +287,23 @@ function exportToExcel(data) {
 }
 
 document.getElementById('logout-btn').addEventListener('click', function (e) {
-    e.preventDefault();
+	e.preventDefault()
 
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert('You are not logged in!');
-        return;
-    }
-
-    fetch('/auth/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        }
-    })
-        .then((response) => {
-            if (response.ok) {
-                localStorage.removeItem('token');
-                sessionStorage.clear();
-                window.location.href = '/';
-            } else {
-                alert('Failed to log out. Please try again.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error during logout:', error);
-        });
-});
+	fetch('/auth/logout', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		credentials: 'include',
+	})
+		.then((response) => {
+			if (response.ok) {
+				window.location.href = '/'
+			} else {
+				alert('Failed to log out. Please try again.')
+			}
+		})
+		.catch((error) => {
+			console.error('Error during logout:', error)
+		})
+})

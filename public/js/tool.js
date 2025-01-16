@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint)
+			const response = await fetch(endpoint, {
+				credentials: 'include',
+			})
 			let data = await response.json()
 
 			if (data.manufacturers) {
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await fetch('/tools/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
+					credentials: 'include',
 					body: JSON.stringify(toolDetails),
 				})
 
@@ -96,13 +99,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Edit Tool
 	document.getElementById('edit-tool-btn').addEventListener('click', async () => {
 		const toolCode = prompt('Enter the Tool Code to edit:')
+
 		if (!toolCode) {
 			alert('Tool Code is required.')
 			return
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`)
+			const response = await fetch(`/tools/${toolCode}`, {
+				credentials: 'include',
+			})
 			const data = await response.json()
 
 			if (!data.tool) {
@@ -145,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const response = await fetch(`/tools/edit/${tool.toolId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
+						credentials: 'include',
 						body: JSON.stringify(updatedToolDetails),
 					})
 
@@ -166,13 +173,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Update tool status
 	document.getElementById('update-tool-btn').addEventListener('click', async () => {
 		const toolCode = prompt('Enter the Tool Code to edit:')
+
 		if (!toolCode) {
 			alert('Tool Code is required.')
 			return
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`)
+			const response = await fetch(`/tools/${toolCode}`, {
+				credentials: 'include',
+			})
 			const data = await response.json()
 
 			if (!data.tool) {
@@ -212,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const response = await fetch(`/tools/edit/${tool.toolId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
+						credentials: 'include',
 						body: JSON.stringify(toolDetails),
 					})
 
@@ -232,13 +243,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Delete Tool
 	document.getElementById('delete-tool-btn').addEventListener('click', async () => {
 		const toolCode = prompt('Enter the Tool Code to delete:')
+
 		if (!toolCode) {
 			alert('Tool Code is required.')
 			return
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`)
+			const response = await fetch(`/tools/${toolCode}`, {
+				credentials: 'include',
+			})
 			const data = await response.json()
 
 			if (!data.tool) {
@@ -252,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				const deleteResponse = await fetch(`/tools/delete/${data.tool.toolId}`, {
 					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
+					credentials: 'include',
 				})
 
 				const deleteData = await deleteResponse.json()
@@ -269,32 +283,23 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 document.getElementById('logout-btn').addEventListener('click', function (e) {
-    e.preventDefault();
+	e.preventDefault()
 
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert('You are not logged in!');
-        return;
-    }
-
-    fetch('/auth/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        }
-    })
-        .then((response) => {
-            if (response.ok) {
-                localStorage.removeItem('token');
-                sessionStorage.clear();
-                window.location.href = '/';
-            } else {
-                alert('Failed to log out. Please try again.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error during logout:', error);
-        });
-});
+	fetch('/auth/logout', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		credentials: 'include',
+	})
+		.then((response) => {
+			if (response.ok) {
+				window.location.href = '/'
+			} else {
+				alert('Failed to log out. Please try again.')
+			}
+		})
+		.catch((error) => {
+			console.error('Error during logout:', error)
+		})
+})

@@ -23,11 +23,11 @@ document.getElementById('checkout-session-form').addEventListener('submit', asyn
 
 	const userDisplayId = document.getElementById('user-id').value
 
-	// fetch token
 	try {
 		const response = await fetch('/checkout/start', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify({ userDisplayId }),
 		})
 		const data = await response.json()
@@ -65,6 +65,7 @@ document.getElementById('end-session-form').addEventListener('submit', async fun
 		const response = await fetch('/checkout/end', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify({ checkoutToken }),
 		})
 
@@ -106,6 +107,7 @@ document.getElementById('tool-out-form').addEventListener('submit', async functi
 		const response = await fetch(`/checkout/tool/out/${toolCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify({ checkoutToken, userDisplayId }),
 		})
 
@@ -142,7 +144,9 @@ document.getElementById('tool-out-form').addEventListener('submit', async functi
 
 async function fetchUserInfo(userDisplayId) {
 	try {
-		const response = await fetch(`/users/${userDisplayId}`)
+		const response = await fetch(`/users/${userDisplayId}`, {
+			credentials: 'include',
+		})
 		const data = await response.json()
 
 		if (response.ok) {
@@ -183,24 +187,15 @@ function updateCheckedOutTools(tools) {
 document.getElementById('logout-btn').addEventListener('click', function (e) {
 	e.preventDefault()
 
-	const token = localStorage.getItem('token')
-
-	if (!token) {
-		alert('You are not logged in!')
-		return
-	}
-
 	fetch('/auth/logout', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`,
+			credentials: 'include',
 		},
 	})
 		.then((response) => {
 			if (response.ok) {
-				localStorage.removeItem('token')
-				sessionStorage.clear()
 				window.location.href = '/'
 			} else {
 				alert('Failed to log out. Please try again.')

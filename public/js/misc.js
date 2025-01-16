@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint)
+			const response = await fetch(endpoint, { credentials: 'include' })
 			let data = await response.json()
 			data = data.tools
 
@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const response = await fetch('/misc/manufacturers/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
+					credentials: 'include',
 					body: JSON.stringify({ manufacturerName, manufacturerContactNumber, manufacturerEmail }),
 				})
 
@@ -81,8 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	// delete manufacturer
 	document.getElementById('delete-manufacturer-btn').addEventListener('click', async () => {
 		detailsContent.style.display = 'block'
+
 		try {
-			const response = await fetch('/misc/manufacturers')
+			const response = await fetch('/misc/manufacturers', { credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {
@@ -107,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						try {
 							const response = await fetch(`/misc/manufacturers/delete/${manufacturerId}`, {
 								method: 'DELETE',
-								headers: { 'Content-Type': 'application/json' },
+								credentials: 'include',
 							})
 
 							const data = await response.json()
@@ -128,8 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	async function loadManufacturers() {
 		const detailsContent = document.getElementById('details-content')
+
 		try {
-			const response = await fetch('/misc/manufacturers')
+			const response = await fetch('/misc/manufacturers', { credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {
@@ -178,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							const response = await fetch(`/misc/manufacturers/edit/${manufacturerId}`, {
 								method: 'PUT',
 								headers: { 'Content-Type': 'application/json' },
+								credentials: 'include',
 								body: JSON.stringify({
 									manufacturerName: updatedName,
 									manufacturerContactNumber: updatedContactNumber,
@@ -203,32 +207,23 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 document.getElementById('logout-btn').addEventListener('click', function (e) {
-    e.preventDefault();
+	e.preventDefault()
 
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert('You are not logged in!');
-        return;
-    }
-
-    fetch('/auth/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        }
-    })
-        .then((response) => {
-            if (response.ok) {
-                localStorage.removeItem('token');
-                sessionStorage.clear();
-                window.location.href = '/';
-            } else {
-                alert('Failed to log out. Please try again.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error during logout:', error);
-        });
-});
+	fetch('/auth/logout', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		credentials: 'include',
+	})
+		.then((response) => {
+			if (response.ok) {
+				window.location.href = '/'
+			} else {
+				alert('Failed to log out. Please try again.')
+			}
+		})
+		.catch((error) => {
+			console.error('Error during logout:', error)
+		})
+})

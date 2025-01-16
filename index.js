@@ -1,10 +1,12 @@
 // variables
 const express = require('express')
-require('dotenv').config()
 const { Pool } = require('pg')
 const axios = require('axios')
 const cors = require('cors')
 const nodemailer = require('nodemailer')
+const cookieParser = require('cookie-parser')
+require('dotenv').config()
+
 const BASE_URL = 'https://capstone-tms-app.fly.dev'
 
 const app = express()
@@ -22,7 +24,8 @@ const pool = new Pool({
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(express.static('public'))
-app.use(cors({ origin: 'https://capstone-tms-app.fly.dev' }))
+app.use(cors({ origin: 'https://capstone-tms-app.fly.dev', credentials: true }))
+app.use(cookieParser())
 
 // serve login page
 app.get('/', (req, res) => {
@@ -40,23 +43,50 @@ app.post('/auth/login', async (req, res) => {
 	}
 
 	try {
-		const response = await axios.post(`${BASE_URL}/auth/login`, {
-			username,
-			password,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/auth/login`,
+			{
+				username,
+				password,
+			},
+			{
+				withCredentials: true,
+				headers: { 'Content-Type': 'application/json' },
+			}
+		)
+		let token = null
+		const setCookieHeader = response.headers['set-cookie']
 
+		if (setCookieHeader && Array.isArray(setCookieHeader)) {
+			const tokenCookie = setCookieHeader.find((cookie) => cookie.startsWith('token='))
+			if (tokenCookie) {
+				token = tokenCookie.split(';')[0].split('=')[1]
+			} else {
+				console.log('Token cookie not found.')
+			}
+		} else {
+			console.log('Set-Cookie header is missing.')
+		}
+		console.log('Token: ', token)
 		if (response.status === 200) {
-			const token = response.data.token
-			res.status(200).json({ message: 'Login successful', token })
+			res.cookie('token', token, {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'None',
+				maxAge: 86400000,
+			})
+			res.status(200).json({ message: 'Login successful' })
 		}
 	} catch (error) {
 		handleAxiosError(error, res, 'Error logging in.')
 	}
 })
 
+app.use(extractToken)
+
 // logout
 app.post('/auth/logout', async (req, res) => {
-	const token = req.headers.authorization?.split(' ')[1]
+	const token = req.cookies.token
 
 	if (!token) {
 		res.status(400).send('Token is required for logout')
@@ -64,15 +94,16 @@ app.post('/auth/logout', async (req, res) => {
 	}
 
 	try {
-		const response = await axios.post(
-			`${BASE_URL}/auth/logout`,
-			{},
-			{
-				headers: { Authorization: `Bearer ${token}` },
-			}
-		)
+		const response = await axios.post(`${BASE_URL}/auth/logout`, {
+			withCredentials: true,
+		})
 
 		if (response.status === 200) {
+			res.clearCookie('token', {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'None',
+			})
 			res.status(200).send('Logout successful')
 		} else {
 			res.status(response.status).send(response.data.message)
@@ -86,6 +117,7 @@ app.post('/auth/logout', async (req, res) => {
 app.get('/find', async (req, res) => {
 	const { type, query } = req.query
 
+
 	if (!type || !query) {
 		return res.status(400).json({ error: 'Both "type" and "query" parameters are required.' })
 	}
@@ -93,6 +125,8 @@ app.get('/find', async (req, res) => {
 		// send to spring
 		const response = await axios.get(`${BASE_URL}/find`, {
 			params: { type, query },
+			headers: { Cookie: `token=${req.cookies.token}` },
+			withCredentials: true,
 		})
 
 		res.json(response.data)
@@ -105,11 +139,18 @@ app.get('/find', async (req, res) => {
 // start checkout session
 app.post('/checkout/start', async (req, res) => {
 	const { userDisplayId } = req.body
+	const token = req.cookies.token
 
 	try {
-		const response = await axios.post(`${BASE_URL}/checkout/start`, {
-			userDisplayId,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/checkout/start`,
+			{
+				userDisplayId,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		if (response.status === 200) {
 			const { user, checkoutToken, checkedOutTools } = response.data
@@ -125,11 +166,18 @@ app.post('/checkout/start', async (req, res) => {
 // end checkout session
 app.post('/checkout/end', async (req, res) => {
 	const { checkoutToken } = req.body
+	const token = req.cookies.token
 
 	try {
-		const response = await axios.post(`${BASE_URL}/checkout/end`, {
-			checkoutToken,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/checkout/end`,
+			{
+				checkoutToken,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		if (response.status === 200) {
 			res.json({ message: response.data.message })
@@ -145,13 +193,20 @@ app.post('/checkout/end', async (req, res) => {
 app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 	const { toolCode } = req.params
 	const { checkoutToken, userDisplayId } = req.body
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.post(`${BASE_URL}/checkout/tool/out/${toolCode}`, {
-			checkoutToken,
-			userDisplayId,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/checkout/tool/out/${toolCode}`,
+			{
+				checkoutToken,
+				userDisplayId,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		const { message, checkedOutTools } = response.data
 
@@ -183,12 +238,19 @@ app.post('/checkout/tool/out/:toolCode', async (req, res) => {
 app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 	const { toolCode } = req.params
 	const { checkoutToken } = req.body
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.post(`${BASE_URL}/checkout/tool/in/${toolCode}`, {
-			checkoutToken,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/checkout/tool/in/${toolCode}`,
+			{
+				checkoutToken,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		if (response.status === 200) {
 			const { message, checkedOutTools } = response.data
@@ -223,10 +285,11 @@ app.post('/checkout/tool/in/:toolCode', async (req, res) => {
 // tools
 // get all tools
 app.get('/tools/all', async (req, res) => {
+	const token = req.cookies.token
+
 	try {
 		// send to spring
-		const response = await axios.get(`${BASE_URL}/tools/all`)
-
+		const response = await axios.get(`${BASE_URL}/tools/all`, { withCredentials: true })
 		res.json(response.data)
 	} catch (error) {
 		handleAxiosError(error, res, 'Error fetching tools.')
@@ -236,11 +299,11 @@ app.get('/tools/all', async (req, res) => {
 // get specific tool
 app.get('/tools/:toolCode', async (req, res) => {
 	const { toolCode } = req.params
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.get(`${BASE_URL}/tools/${toolCode}`)
-
+		const response = await axios.get(`${BASE_URL}/tools/${toolCode}`, { withCredentials: true })
 		res.json(response.data)
 	} catch (error) {
 		handleAxiosError(error, res, 'Error fetching tool.')
@@ -250,6 +313,7 @@ app.get('/tools/:toolCode', async (req, res) => {
 // create new tool
 app.post('/tools/new', async (req, res) => {
 	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null } = req.body
+	const token = req.cookies.token
 
 	if (!toolName || !toolCode) {
 		return res.status(400).send('All require fields must be provided.')
@@ -262,12 +326,18 @@ app.post('/tools/new', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post(`${BASE_URL}/tools/new`, {
-			toolName,
-			toolImageUrl,
-			toolCode,
-			manufacturerId,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/tools/new`,
+			{
+				toolName,
+				toolImageUrl,
+				toolCode,
+				manufacturerId,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		res.json(response.data)
 	} catch (error) {
@@ -279,17 +349,24 @@ app.post('/tools/new', async (req, res) => {
 app.put('/tools/edit/:toolId', async (req, res) => {
 	const { toolId } = req.params
 	const { toolName, toolImageUrl = null, toolCode, manufacturerId = null, toolStatus = null, toolCheckedOut = false } = req.body
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.put(`${BASE_URL}/tools/edit/${toolId}`, {
-			toolName,
-			toolImageUrl,
-			toolCode,
-			manufacturerId,
-			toolStatus,
-			toolCheckedOut,
-		})
+		const response = await axios.put(
+			`${BASE_URL}/tools/edit/${toolId}`,
+			{
+				toolName,
+				toolImageUrl,
+				toolCode,
+				manufacturerId,
+				toolStatus,
+				toolCheckedOut,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		res.json(response.data)
 	} catch (error) {
@@ -300,10 +377,13 @@ app.put('/tools/edit/:toolId', async (req, res) => {
 // delete tool
 app.delete('/tools/delete/:toolId', async (req, res) => {
 	const { toolId } = req.params
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.delete(`${BASE_URL}/tools/delete/${toolId}`)
+		const response = await axios.delete(`${BASE_URL}/tools/delete/${toolId}`, {
+			withCredentials: true,
+		})
 
 		// send to client
 		res.json(response.data)
@@ -315,9 +395,13 @@ app.delete('/tools/delete/:toolId', async (req, res) => {
 // users
 // get all users
 app.get('/users/all', async (req, res) => {
+	const token = req.cookies.token
+
 	try {
 		// send to spring
-		const response = await axios.get(`${BASE_URL}/users/all`)
+		const response = await axios.get(`${BASE_URL}/users/all`, {
+			withCredentials: true,
+		})
 
 		// send to client
 		res.json(response.data)
@@ -329,10 +413,13 @@ app.get('/users/all', async (req, res) => {
 // get specific user
 app.get('/users/:displayId', async (req, res) => {
 	const { displayId } = req.params
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.get(`${BASE_URL}/users/${displayId}`)
+		const response = await axios.get(`${BASE_URL}/users/${displayId}`, {
+			withCredentials: true,
+		})
 
 		// send to client
 		res.json(response.data)
@@ -344,6 +431,7 @@ app.get('/users/:displayId', async (req, res) => {
 // create new user
 app.post('/users/new', async (req, res) => {
 	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, userAdmin = false, userAuth = null } = req.body
+	const token = req.cookies.token
 
 	// admin specific checks
 	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
@@ -353,15 +441,21 @@ app.post('/users/new', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.post(`${BASE_URL}/users/new`, {
-			userDisplayId,
-			userName,
-			userContactNumber,
-			userEmail,
-			supervisorId,
-			userAdmin,
-			userAuth,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/users/new`,
+			{
+				userDisplayId,
+				userName,
+				userContactNumber,
+				userEmail,
+				supervisorId,
+				userAdmin,
+				userAuth,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		// send to client
 		res.json(response.data)
@@ -374,6 +468,7 @@ app.post('/users/new', async (req, res) => {
 app.put('/users/edit/:userId', async (req, res) => {
 	const { userId } = req.params
 	const { userDisplayId, userName, userContactNumber, userEmail, supervisorId = null, userAdmin = false, userAuth = null } = req.body
+	const token = req.cookies.token
 
 	// admin specific checks
 	if (userAdmin && (!userAuth || userAuth.trim() === '')) {
@@ -383,15 +478,21 @@ app.put('/users/edit/:userId', async (req, res) => {
 
 	try {
 		// send to spring
-		const response = await axios.put(`${BASE_URL}/users/edit/${userId}`, {
-			userDisplayId,
-			userName,
-			userContactNumber,
-			userEmail,
-			supervisorId,
-			userAdmin,
-			userAuth,
-		})
+		const response = await axios.put(
+			`${BASE_URL}/users/edit/${userId}`,
+			{
+				userDisplayId,
+				userName,
+				userContactNumber,
+				userEmail,
+				supervisorId,
+				userAdmin,
+				userAuth,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		// send to client
 		res.json(response.data)
@@ -403,10 +504,13 @@ app.put('/users/edit/:userId', async (req, res) => {
 // delete user
 app.delete('/users/delete/:userId', async (req, res) => {
 	const { userId } = req.params
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.delete(`${BASE_URL}/users/delete/${userId}`)
+		const response = await axios.delete(`${BASE_URL}/users/delete/${userId}`, {
+			withCredentials: true,
+		})
 
 		// send to client
 		res.json(response.data)
@@ -418,8 +522,12 @@ app.delete('/users/delete/:userId', async (req, res) => {
 // manufacturers
 // get manufacturers
 app.get('/misc/manufacturers', async (req, res) => {
+	const token = req.cookies.token
+
 	try {
-		const response = await axios.get(`${BASE_URL}/misc/manufacturers`)
+		const response = await axios.get(`${BASE_URL}/misc/manufacturers`, {
+			withCredentials: true,
+		})
 
 		res.json(response.data)
 	} catch (error) {
@@ -430,14 +538,21 @@ app.get('/misc/manufacturers', async (req, res) => {
 // create new manufacturer
 app.post('/misc/manufacturers/new', async (req, res) => {
 	const { manufacturerName, manufacturerContactNumber, manufacturerEmail } = req.body
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.post(`${BASE_URL}/misc/manufacturers/new`, {
-			manufacturerName,
-			manufacturerContactNumber,
-			manufacturerEmail,
-		})
+		const response = await axios.post(
+			`${BASE_URL}/misc/manufacturers/new`,
+			{
+				manufacturerName,
+				manufacturerContactNumber,
+				manufacturerEmail,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		res.json(response.data)
 	} catch (error) {
@@ -449,14 +564,21 @@ app.post('/misc/manufacturers/new', async (req, res) => {
 app.put('/misc/manufacturers/edit/:manufacturerId', async (req, res) => {
 	const { manufacturerId } = req.params
 	const { manufacturerName, manufacturerContactNumber, manufacturerEmail } = req.body
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.put(`${BASE_URL}/misc/manufacturers/edit/${manufacturerId}`, {
-			manufacturerName,
-			manufacturerContactNumber,
-			manufacturerEmail,
-		})
+		const response = await axios.put(
+			`${BASE_URL}/misc/manufacturers/edit/${manufacturerId}`,
+			{
+				manufacturerName,
+				manufacturerContactNumber,
+				manufacturerEmail,
+			},
+			{
+				withCredentials: true,
+			}
+		)
 
 		res.json(response.data)
 	} catch (error) {
@@ -467,10 +589,13 @@ app.put('/misc/manufacturers/edit/:manufacturerId', async (req, res) => {
 // delete manufacturer
 app.delete('/misc/manufacturers/delete/:manufacturerId', async (req, res) => {
 	const { manufacturerId } = req.params
+	const token = req.cookies.token
 
 	try {
 		// send to spring
-		const response = await axios.delete(`${BASE_URL}/misc/manufacturers/delete/${manufacturerId}`)
+		const response = await axios.delete(`${BASE_URL}/misc/manufacturers/delete/${manufacturerId}`, {
+			withCredentials: true,
+		})
 
 		res.json(response.data)
 	} catch (error) {
@@ -480,6 +605,7 @@ app.delete('/misc/manufacturers/delete/:manufacturerId', async (req, res) => {
 
 app.get('/reports/user', async (req, res) => {
 	const { type, userDisplayId } = req.query
+	const token = req.cookies.token
 
 	if (!type) {
 		return res.status(400).send('The "type" query parameter is required.')
@@ -491,6 +617,7 @@ app.get('/reports/user', async (req, res) => {
 	try {
 		const response = await axios.get(`${BASE_URL}/reports/user`, {
 			params: { type, userDisplayId },
+			withCredentials: true,
 		})
 
 		res.json(response.data)
@@ -501,6 +628,7 @@ app.get('/reports/user', async (req, res) => {
 
 app.get('/reports/tool', async (req, res) => {
 	const { type, toolCode } = req.query
+	const token = req.cookies.token
 
 	if (!type) {
 		return res.status(400).send('The "type" query parameter is required.')
@@ -512,6 +640,7 @@ app.get('/reports/tool', async (req, res) => {
 	try {
 		const response = await axios.get(`${BASE_URL}/reports/tool`, {
 			params: { type, toolCode },
+			withCredentials: true,
 		})
 
 		res.json(response.data)
@@ -522,6 +651,7 @@ app.get('/reports/tool', async (req, res) => {
 
 app.get('/reports/checkout', async (req, res) => {
 	const { type, time, startDate, endDate } = req.query
+	const token = req.cookies.token
 
 	if (!type) {
 		return res.status(400).send('The "type" query parameter is required.')
@@ -544,6 +674,7 @@ app.get('/reports/checkout', async (req, res) => {
 	try {
 		const response = await axios.get(`${BASE_URL}/reports/checkout`, {
 			params: { type, time, startDate, endDate },
+			withCredentials: true,
 		})
 
 		res.json(response.data)
@@ -554,6 +685,7 @@ app.get('/reports/checkout', async (req, res) => {
 
 app.get('/reports/misc', async (req, res) => {
 	const { type, manufacturerName } = req.query
+	const token = req.cookies.token
 
 	if (!type) {
 		return res.status(400).send('The "type" query parameter is required.')
@@ -565,6 +697,7 @@ app.get('/reports/misc', async (req, res) => {
 	try {
 		const response = await axios.get(`${BASE_URL}/reports/misc`, {
 			params: { type, manufacturerName },
+			withCredentials: true,
 		})
 
 		res.json(response.data)
@@ -606,10 +739,15 @@ app.post('/send-email', async (req, res) => {
 // serve pages
 app.get('/:page', (req, res) => {
 	const validPages = ['checkout', 'checkin', 'search', 'reports', 'ticket', 'docs', 'user_mgmt', 'tool_mgmt', 'misc_mgmt']
+	const adminPages = ['user_mgmt', 'tool_mgmt', 'misc_mgmt']
 	const page = req.params.page
 
 	if (validPages.includes(page)) {
-		res.sendFile(`${__dirname}/public/${page}.html`)
+		if (adminPages.includes(page)) {
+			res.sendFile(`${__dirname}/public/admin/${page}.html`)
+		} else {
+			res.sendFile(`${__dirname}/public/${page}.html`)
+		}
 	} else {
 		res.status(404).send('Page not found')
 	}
@@ -617,15 +755,36 @@ app.get('/:page', (req, res) => {
 
 // start server
 app.listen(PORT, () => {
-	console.log('Server is running')
+	console.log('Server is running.')
 })
 
 function handleAxiosError(error, res, defaultMessage) {
 	if (error.response) {
-		console.error('Error response from server:', error.response.data)
+		console.error('Error response from server:', {
+			status: error.response.status,
+			data: error.response.data,
+		})
 		return res.status(error.response.status).send(error.response.data.message || defaultMessage)
 	} else {
-		console.error('Unexpected error:', error)
+		console.error('Unexpected error:', error.message)
 		return res.status(500).send('Internal server error')
+	}
+}
+
+function extractToken(req, res, next) {
+	const publicRoutes = [/^\/auth\/login$/, /^\/auth\/register$/, /^\/management\/.*/]
+	const isPublicRoute = publicRoutes.some((route) => route.test(req.path))
+
+	if (isPublicRoute) {
+		return next()
+	}
+
+	const token = req.cookies.token
+
+	if (token) {
+		req.token = token
+		next()
+	} else {
+		res.status(401).send('Authorization token is missing or invalid.')
 	}
 }
