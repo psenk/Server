@@ -11,9 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), {
-				credentials: 'include',
-			})
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), { method: 'GET', credentials: 'include' })
 			let data = await response.json()
 
 			if (data.manufacturers) {
@@ -106,9 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
-				credentials: 'include',
-			})
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, { method: 'GET', credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.tool) {
@@ -180,9 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
-				credentials: 'include',
-			})
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, { method: 'GET', credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.tool) {
@@ -250,16 +244,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
-				credentials: 'include',
-			})
-			const data = await response.json()
-
-			if (!data.tool) {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, { method: 'GET', credentials: 'include' })
+			if (!response.ok) {
+				const data = await response.json()
 				alert(data.message || 'Tool not found.')
 				return
 			}
 
+			const data = await response.json()
 			const confirmDelete = confirm(`Are you sure you want to delete the tool "${data.tool.toolName}" (${data.tool.toolCode})?`)
 			if (!confirmDelete) return
 
@@ -269,8 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					credentials: 'include',
 				})
 
-				const deleteData = await deleteResponse.json()
-				alert(deleteData.message || 'Tool deleted successfully!')
+				if (deleteResponse.ok) {
+					const data = await deleteResponse.json()
+					alert(data.message || 'Tool deleted successfully!')
+				} else if (deleteResponse.status === 404) {
+					const data = await deleteResponse.json()
+					alert(data.message || 'Tool not found.')
+				} else {
+					alert('An unexpected error occurred while attempting to delete the tool.')
+				}
 			} catch (error) {
 				console.error('Error deleting tool:', error)
 				alert('Error deleting tool.')

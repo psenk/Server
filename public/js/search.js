@@ -27,9 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		try {
 			// send to spring
-			const response = await fetch(`https://capstone-tms-app.fly.dev/find?type=${type}&query=${query}`, {
-				credentials: 'include',
-			})
+			const response = await fetch(`https://capstone-tms-app.fly.dev/find?type=${type}&query=${query}`, { method: 'GET', credentials: 'include' })
 
 			if (!response.ok) {
 				const error = await response.text()

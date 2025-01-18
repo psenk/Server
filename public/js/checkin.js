@@ -150,7 +150,7 @@ document.getElementById('tool-in-form').addEventListener('submit', async functio
 
 async function fetchUserInfo(userDisplayId) {
 	try {
-		const response = await fetch(`https://capstone-tms-app.fly.dev/users/${userDisplayId}`, { credentials: 'include' })
+		const response = await fetch(`https://capstone-tms-app.fly.dev/users/${userDisplayId}`, { method: 'GET', credentials: 'include' })
 		const data = await response.json()
 
 		if (response.ok) {

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), { method: 'GET', credentials: 'include' })
 			let data = await response.json()
 			data = data.tools
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		detailsContent.style.display = 'block'
 
 		try {
-			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { method: 'GET', credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const detailsContent = document.getElementById('details-content')
 
 		try {
-			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { method: 'GET', credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {

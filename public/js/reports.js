@@ -190,9 +190,7 @@ async function fetchAndDisplayReport(url, params, type) {
 		const queryString = new URLSearchParams(params).toString()
 		const fullUrl = `${url}?${queryString}`
 
-		const response = await fetch(fullUrl, {
-			credentials: 'include',
-		})
+		const response = await fetch(fullUrl, { method: 'GET', credentials: 'include' })
 		if (!response.ok) {
 			throw new Error(`HTTP error, status: ${response.status}`)
 		}

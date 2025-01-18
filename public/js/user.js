@@ -4,9 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), {
-				credentials: 'include',
-			})
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), { method: 'GET', credentials: 'include' })
 			let data = await response.json()
 
 			if (data.users) {
@@ -127,9 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, {
-				credentials: 'include',
-			})
+			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, { method: 'GET', credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.user) {
@@ -225,23 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, {
-				credentials: 'include',
-			})
+			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, { method: 'GET', credentials: 'include' })
 			if (!response.ok) {
-				const errorData = await response.json()
-				alert(errorData.message || 'User not found.')
-				return
-			}
-
-			const data = await response.json()
-			if (!data.user) {
+				const data = await response.json()
 				alert(data.message || 'User not found.')
 				return
 			}
 
+			const data = await response.json()
 			const confirmDelete = confirm(`Are you sure you want to delete the user "${data.user.userName}" (${data.user.userDisplayId})?`)
-
 			if (!confirmDelete) return
 
 			try {
@@ -251,11 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				})
 
 				if (deleteResponse.ok) {
-					const deleteData = await deleteResponse.json()
-					alert(deleteData.message || 'User deleted successfully!')
+					const data = await deleteResponse.json()
+					alert(data.message || 'User deleted successfully!')
 				} else if (deleteResponse.status === 404) {
-					const errorData = await deleteResponse.json()
-					alert(errorData.message || 'User not found.')
+					const data = await deleteResponse.json()
+					alert(data.message || 'User not found.')
 				} else {
 					alert('An unexpected error occurred while attempting to delete the user.')
 				}

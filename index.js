@@ -1,13 +1,12 @@
+// for the pindakaas viking, who always lends his aid
+
 // variables
 const express = require('express')
 const { Pool } = require('pg')
-const axios = require('axios')
 const cors = require('cors')
 const nodemailer = require('nodemailer')
 const cookieParser = require('cookie-parser')
 require('dotenv').config()
-
-const BASE_URL = 'https://capstone-tms-app.fly.dev'
 
 const app = express()
 const PORT = 3000
@@ -58,7 +57,7 @@ app.post('/send-email', async (req, res) => {
 		await transporter.sendMail(mailOptions)
 		res.status(200).send('Email sent successfully.')
 	} catch (error) {
-		handleAxiosError(error, res, 'Error sending email.')
+		res.status(500).send('Error sending email.')
 	}
 })
 
@@ -83,16 +82,3 @@ app.get('/:page', (req, res) => {
 app.listen(PORT, () => {
 	console.log('Server is running.')
 })
-
-function handleAxiosError(error, res, defaultMessage) {
-	if (error.response) {
-		console.error('Error response from server:', {
-			status: error.response.status,
-			data: error.response.data,
-		})
-		return res.status(error.response.status).send(error.response.data.message || defaultMessage)
-	} else {
-		console.error('Unexpected error:', error.message)
-		return res.status(500).send('Internal server error')
-	}
-}
