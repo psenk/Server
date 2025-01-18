@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint, { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), { credentials: 'include' })
 			let data = await response.json()
 			data = data.tools
 
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const manufacturerEmail = document.getElementById('manufacturer_email').value
 
 			try {
-				const response = await fetch('/misc/manufacturers/new', {
+				const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					credentials: 'include',
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		detailsContent.style.display = 'block'
 
 		try {
-			const response = await fetch('/misc/manufacturers', { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					if (confirmDelete) {
 						try {
-							const response = await fetch(`/misc/manufacturers/delete/${manufacturerId}`, {
+							const response = await fetch(`https://capstone-tms-app.fly.dev/misc/manufacturers/delete/${manufacturerId}`, {
 								method: 'DELETE',
 								credentials: 'include',
 							})
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const detailsContent = document.getElementById('details-content')
 
 		try {
-			const response = await fetch('/misc/manufacturers', { credentials: 'include' })
+			const response = await fetch('https://capstone-tms-app.fly.dev/misc/manufacturers', { credentials: 'include' })
 			const data = await response.json()
 
 			if (!data.manufacturers || data.manufacturers.length === 0) {
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						const updatedEmail = document.getElementById('edit_email').value
 
 						try {
-							const response = await fetch(`/misc/manufacturers/edit/${manufacturerId}`, {
+							const response = await fetch(`https://capstone-tms-app.fly.dev/misc/manufacturers/edit/${manufacturerId}`, {
 								method: 'PUT',
 								headers: { 'Content-Type': 'application/json' },
 								credentials: 'include',
@@ -206,24 +206,26 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 })
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })

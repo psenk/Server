@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint, {
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), {
 				credentials: 'include',
 			})
 			let data = await response.json()
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			try {
-				const response = await fetch('/users/new', {
+				const response = await fetch('https://capstone-tms-app.fly.dev/users/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					credentials: 'include',
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/users/${displayId}`, {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, {
 				credentials: 'include',
 			})
 			const data = await response.json()
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				try {
-					const response = await fetch(`/users/edit/${user.userId}`, {
+					const response = await fetch(`https://capstone-tms-app.fly.dev/users/edit/${user.userId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
 						credentials: 'include',
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/users/${displayId}`, {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/users/${displayId}`, {
 				credentials: 'include',
 			})
 			if (!response.ok) {
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!confirmDelete) return
 
 			try {
-				const deleteResponse = await fetch(`/users/delete/${data.user.userId}`, {
+				const deleteResponse = await fetch(`https://capstone-tms-app.fly.dev/users/delete/${data.user.userId}`, {
 					method: 'DELETE',
 					credentials: 'include',
 				})
@@ -270,22 +270,26 @@ document.addEventListener('DOMContentLoaded', () => {
 	})
 })
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })

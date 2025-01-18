@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// populate dropdowns
 	const populateDropdown = async (endpoint, dropdownId, valueKey, textKey, preselectedValue = null) => {
 		try {
-			const response = await fetch(endpoint, {
+			const response = await fetch('https://capstone-tms-app.fly.dev'.concat(endpoint), {
 				credentials: 'include',
 			})
 			let data = await response.json()
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			try {
-				const response = await fetch('/tools/new', {
+				const response = await fetch('https://capstone-tms-app.fly.dev/tools/new', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					credentials: 'include',
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`, {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
 				credentials: 'include',
 			})
 			const data = await response.json()
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				try {
-					const response = await fetch(`/tools/edit/${tool.toolId}`, {
+					const response = await fetch(`https://capstone-tms-app.fly.dev/tools/edit/${tool.toolId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
 						credentials: 'include',
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`, {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
 				credentials: 'include',
 			})
 			const data = await response.json()
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>Update Tool Status</h3>
             <form id="update-tool-form">
                 <label for="tool_checked_out">Tool Checked Out:</label>
-                <input type="checkbox" id="tool_checked_out" name="toolCheckedOut" ${tool.toolCheckedOut ? 'checked' : ''}"/>
+                <input type="checkbox" id="tool_checked_out" name="toolCheckedOut" ${tool.toolCheckedOut ? 'checked' : ''}/>
                 <label for="tool_status">Tool Status:</label>
                 <select id="tool_status" name="toolStatus">
 				                    ${Object.values(ToolStatus)
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				try {
-					const response = await fetch(`/tools/edit/${tool.toolId}`, {
+					const response = await fetch(`https://capstone-tms-app.fly.dev/tools/edit/${tool.toolId}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
 						credentials: 'include',
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/tools/${toolCode}`, {
+			const response = await fetch(`https://capstone-tms-app.fly.dev/tools/${toolCode}`, {
 				credentials: 'include',
 			})
 			const data = await response.json()
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!confirmDelete) return
 
 			try {
-				const deleteResponse = await fetch(`/tools/delete/${data.tool.toolId}`, {
+				const deleteResponse = await fetch(`https://capstone-tms-app.fly.dev/tools/delete/${data.tool.toolId}`, {
 					method: 'DELETE',
 					credentials: 'include',
 				})
@@ -282,24 +282,26 @@ document.addEventListener('DOMContentLoaded', () => {
 	})
 })
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })

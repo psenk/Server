@@ -24,15 +24,16 @@ document.getElementById('checkout-session-form').addEventListener('submit', asyn
 	const userDisplayId = document.getElementById('user-id').value
 
 	try {
-		const response = await fetch('/checkout/start', {
+		const response = await fetch('https://capstone-tms-app.fly.dev/checkout/start', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
 			body: JSON.stringify({ userDisplayId }),
 		})
-		const data = await response.json()
 
 		if (response.ok) {
+			const data = await response.json()
+
 			checkoutToken = data.checkoutToken
 			tools = data.checkedOutTools
 
@@ -44,10 +45,13 @@ document.getElementById('checkout-session-form').addEventListener('submit', asyn
 			fetchUserInfo(userDisplayId)
 			updateCheckedOutTools(tools)
 		} else {
-			alert(data.message || 'Error starting checkout session')
+			const data = await response.json()
+			alert(data.message || 'Error starting checkout session.')
+			return
 		}
 	} catch (error) {
-		alert('An error has occured.  Please try again.')
+		console.error('Error occured during checkout: ', error)
+		alert('An unexpected error has occured.  Please try again later.')
 	}
 })
 
@@ -61,7 +65,7 @@ document.getElementById('end-session-form').addEventListener('submit', async fun
 	}
 
 	try {
-		const response = await fetch('/checkout/end', {
+		const response = await fetch('https://capstone-tms-app.fly.dev/checkout/end', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
@@ -81,12 +85,13 @@ document.getElementById('end-session-form').addEventListener('submit', async fun
 			document.getElementById('user-submit-btn').style.visibility = 'visible'
 			document.getElementById('checked-out-tools-label').style.display = 'none'
 		} else {
-			const errorData = await response.json()
-			alert(errorData.message || 'Error ending checkout session.')
+			const data = await response.json()
+			alert(data.message || 'Error ending checkout session.')
+			return
 		}
 	} catch (error) {
-		console.error('Error ending checkout session:', error)
-		alert('An error occurred. Please try again.')
+		console.error('Error occured during checkout: ', error)
+		alert('An unexpected error has occured.  Please try again later.')
 	}
 })
 
@@ -107,7 +112,7 @@ document.getElementById('tool-in-form').addEventListener('submit', async functio
 	}
 
 	try {
-		const response = await fetch(`/checkout/tool/in/${toolCode}`, {
+		const response = await fetch(`https://capstone-tms-app.fly.dev/checkout/tool/in/${toolCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			credentials: 'include',
@@ -145,7 +150,7 @@ document.getElementById('tool-in-form').addEventListener('submit', async functio
 
 async function fetchUserInfo(userDisplayId) {
 	try {
-		const response = await fetch(`/users/${userDisplayId}`, { credentials: 'include' })
+		const response = await fetch(`https://capstone-tms-app.fly.dev/users/${userDisplayId}`, { credentials: 'include' })
 		const data = await response.json()
 
 		if (response.ok) {
@@ -183,24 +188,26 @@ function updateCheckedOutTools(tools) {
 	})
 }
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })

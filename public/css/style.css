@@ -273,7 +273,7 @@ button:active {
 }
 
 #tool-out-section #tool-in-section {
-	margin-top: 20px;
+	margin-top: 10px;
 }
 
 #tool-code {
@@ -355,11 +355,17 @@ button:active {
 fieldset {
     border: 1px solid #ccc;
     border-radius: 5px;
-    padding: 20px;
+	padding: 15px;
     background-color: #f9f9f9;
     margin: 20px 0;
     width: 100%;
     box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+}
+
+.mgmt-fieldset {
+	gap: 20px;
 }
 
 legend {
@@ -507,15 +513,6 @@ fieldset .delete-btn:hover {
 	background-color: #2a4ba7;
 }
 
-fieldset {
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	padding: 15px;
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
-}
-
 legend {
 	font-weight: bold;
 	color: #34495e;
@@ -534,6 +531,7 @@ legend {
 	border-radius: 5px;
 	cursor: pointer;
 	max-width: 100px;
+	margin-bottom: 15px;
 	transition: background-color 0.2s ease;
 }
 

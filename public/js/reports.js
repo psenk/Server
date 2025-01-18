@@ -1,3 +1,4 @@
+let reportTitle = ''
 const reportTypeDropdown = document.getElementById('report-type')
 
 const userReportsSection = document.getElementById('user-reports-section')
@@ -122,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				params.manufacturerName = document.getElementById('manufacturer-name').value
 			}
 		}
-		let url = `/reports/${prefix}/`
-		fetchAndDisplayReport(url, params)
+		let url = `https://capstone-tms-app.fly.dev/reports/${prefix}`
+		fetchAndDisplayReport(url, params, reportType)
 	})
 
 	// user reports
@@ -184,7 +185,7 @@ function resetDropdowns() {
 	})
 }
 
-async function fetchAndDisplayReport(url, params) {
+async function fetchAndDisplayReport(url, params, type) {
 	try {
 		const queryString = new URLSearchParams(params).toString()
 		const fullUrl = `${url}?${queryString}`
@@ -199,6 +200,9 @@ async function fetchAndDisplayReport(url, params) {
 		const data = await response.json()
 
 		clearTable()
+
+		reportTitle = getReportTitle(params.type, type)
+		addReportTitle(reportTitle)
 
 		if (Array.isArray(data) && data.length > 0) {
 			const headers = Object.keys(data[0])
@@ -217,6 +221,26 @@ async function fetchAndDisplayReport(url, params) {
 function clearTable() {
 	reportTableHead.innerHTML = ''
 	reportTableBody.innerHTML = ''
+}
+
+function getReportTitle(report, type) {
+	const readablePrefix = type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' ')
+	return `${readablePrefix} - ${report.replace(/-/g, ' ').toUpperCase()}`
+}
+
+function addReportTitle(title) {
+	const titleRow = document.createElement('tr')
+	const titleCell = document.createElement('th')
+	titleCell.colSpan = 100
+	titleCell.textContent = title
+	titleCell.style.textAlign = 'center'
+	titleCell.style.fontSize = '16px'
+	titleCell.style.fontWeight = 'bold'
+	titleCell.style.padding = '10px'
+	titleCell.style.borderBottom = '2px solid #ccc'
+	titleRow.appendChild(titleCell)
+
+	reportTableHead.appendChild(titleRow)
 }
 
 function populateTableHeaders(headers) {
@@ -270,7 +294,7 @@ function addExportButtons(data) {
 
 function exportToCSV(data) {
 	const headers = Object.keys(data[0])
-	const csvContent = [headers.join(','), ...data.map((row) => headers.map((header) => `"${row[header] || ''}"`).join(','))].join('\n')
+	const csvContent = [`"${reportTitle}"`, headers.join(','), ...data.map((row) => headers.map((header) => `"${row[header] || ''}"`).join(','))].join('\n')
 
 	const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
 	const link = document.createElement('a')
@@ -282,28 +306,31 @@ function exportToCSV(data) {
 function exportToExcel(data) {
 	const worksheet = XLSX.utils.json_to_sheet(data)
 	const workbook = XLSX.utils.book_new()
+	XLSX.utils.sheet_add_aoa(worksheet, [[reportTitle]], { origin: 'A1' })
 	XLSX.utils.book_append_sheet(workbook, worksheet, 'Report')
 	XLSX.writeFile(workbook, 'report.xlsx')
 }
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })

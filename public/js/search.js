@@ -26,13 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		try {
-			const response = await fetch(`/find?type=${type}&query=${query}`, {
+			// send to spring
+			const response = await fetch(`https://capstone-tms-app.fly.dev/find?type=${type}&query=${query}`, {
 				credentials: 'include',
 			})
 
 			if (!response.ok) {
-				const error = await response.json()
-				searchResults.innerHTML = `<p class="error">${error.error || 'An error occurred.'}</p>`
+				const error = await response.text()
+				alert(`Search failed: ${error}`)
 				return
 			}
 
@@ -89,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					})
 					.join('')
 			} else {
-				searchResults.innerHTML = '<p>No results found.</p>'
+				searchResults.innerHTML = '<br><p>No results found.</p>'
 			}
 		} catch (error) {
 			console.error('Error fetching search results:', error)
@@ -98,24 +99,26 @@ document.addEventListener('DOMContentLoaded', () => {
 	})
 })
 
-document.getElementById('logout-btn').addEventListener('click', function (e) {
+document.getElementById('logout-btn').addEventListener('click', async function (e) {
 	e.preventDefault()
 
-	fetch('/auth/logout', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		credentials: 'include',
-	})
-		.then((response) => {
-			if (response.ok) {
-				window.location.href = '/'
-			} else {
-				alert('Failed to log out. Please try again.')
-			}
+	try {
+		const response = await fetch('https://capstone-tms-app.fly.dev/auth/logout', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
 		})
-		.catch((error) => {
-			console.error('Error during logout:', error)
-		})
+
+		if (response.ok) {
+			window.location.replace('/')
+		} else {
+			const error = await response.json()
+			alert(`Failed to log out: ${error.message || 'Unknown error'}`)
+		}
+	} catch (error) {
+		console.error('Error during logout:', error)
+		alert('An unexpected error occurred. Please try again.')
+	}
 })
